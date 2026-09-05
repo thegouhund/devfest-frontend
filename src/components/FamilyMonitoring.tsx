@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useCallback } from 'react'
-import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Badge, Chip } from '@/components/ui/badge'
@@ -13,6 +12,7 @@ import {
   Search,
 
   UserPen,
+  User,
   Sparkles,
   Lock,
   ShieldCheck,
@@ -25,7 +25,6 @@ import {
   createProfile,
   updateProfile,
   getFamilyDashboard,
-  initialsFrom,
   listProfiles,
 } from '@/lib/auth-api'
 import { getVitalsTrend } from '@/lib/health-api'
@@ -83,7 +82,6 @@ export interface MonitoredFamilyMember {
   hasPin?: boolean
   uiMode: 'standard' | 'elderly'
   avatarBg: string
-  initials: string
   /** null kalau profil ini belum punya pengukuran apa pun. */
   hr: number | null
   hrv: number | null
@@ -173,7 +171,6 @@ export const FamilyMonitoring: React.FC = () => {
             hasPin: profile.has_pin,
             uiMode: profile.ui_mode,
             avatarBg: profile.role === 'admin' ? 'bg-clay-700' : 'bg-sage-700',
-            initials: initialsFrom(profile.full_name),
             hr: round(latest.get('heart_rate')),
             hrv: round(latest.get('hrv_rmssd')),
             rr: round(latest.get('respiration_rate')),
@@ -365,11 +362,11 @@ export const FamilyMonitoring: React.FC = () => {
               {/* MEMBER HEADER BAR */}
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-ink-100">
                 <div className="flex items-center gap-3">
-                  <Avatar size="md" className={`${member.avatarBg} text-white font-bold text-sm shadow-xs`}>
-                    <AvatarFallback className={`${member.avatarBg} text-white font-bold`}>
-                      {member.initials}
-                    </AvatarFallback>
-                  </Avatar>
+                  <span
+                    className={`${member.avatarBg} w-11 h-11 rounded-full flex items-center justify-center text-white shadow-xs shrink-0`}
+                  >
+                    <User className="w-5 h-5" />
+                  </span>
                   <div className="text-left">
                     <div className="flex flex-wrap items-center gap-2">
                       <h3 className="text-base sm:text-lg font-extrabold text-ink-900 tracking-tight">
@@ -547,7 +544,7 @@ export const FamilyMonitoring: React.FC = () => {
                 </div>
 
                 {/* ZONE 2: TALL VERTICAL BOX (PRIMARY METRIC: HEART RATE BPM) */}
-                <div className="lg:col-span-2 bg-ink-50/70 border border-ink-200/80 rounded-2xl p-4 flex flex-col items-center justify-between text-center space-y-2">
+                <div className="lg:col-span-2 bg-white border border-ink-200/80 rounded-2xl p-4 flex flex-col items-center justify-between text-center space-y-2">
                   <div className="w-full flex items-center justify-between">
                     <span className="text-xs font-bold text-ink-700">Detak Jantung</span>
                     <div className="w-7 h-7 rounded-full bg-rose-50 border border-rose-100 flex items-center justify-center">
@@ -573,9 +570,6 @@ export const FamilyMonitoring: React.FC = () => {
                     >
                       {member.status}
                     </Badge>
-                    <span className="text-[10px] text-ink-400 font-medium">
-                      Sensor Optik rPPG
-                    </span>
                   </div>
                 </div>
 

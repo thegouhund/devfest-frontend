@@ -363,7 +363,7 @@ export const ActivityLog: React.FC<ActivityLogProps> = ({ activities, onAdd, onD
 
       {/* POP UP: CATAT AKTIVITAS BARU */}
       <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
-        <DialogContent className="w-full max-w-md bg-white rounded-3xl p-6 border border-ink-200 shadow-2xl space-y-5">
+        <DialogContent className="w-full max-w-xl sm:max-w-xl bg-white rounded-3xl p-6 sm:p-7 border border-ink-200 shadow-2xl space-y-5 max-h-[90vh] overflow-y-auto">
           <DialogHeader className="flex flex-row items-center gap-2.5 pb-3 border-b border-ink-100">
             <div className="w-10 h-10 rounded-xl bg-clay-50 border border-clay-100/80 flex items-center justify-center text-clay-600 shrink-0">
               <Plus className="w-5 h-5" />
@@ -383,7 +383,7 @@ export const ActivityLog: React.FC<ActivityLogProps> = ({ activities, onAdd, onD
               <Label className="text-xs font-bold text-ink-700 uppercase tracking-wider">
                 Kategori
               </Label>
-              <div className="grid grid-cols-4 gap-1.5">
+              <div className="grid grid-cols-4 sm:grid-cols-7 gap-2">
                 {activityCategories.map((cat) => (
                   <button
                     key={cat.key}

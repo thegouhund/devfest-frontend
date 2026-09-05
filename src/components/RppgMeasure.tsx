@@ -1,7 +1,14 @@
 import React, { useEffect, useRef, useState } from 'react'
-import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Chip } from '@/components/ui/badge'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from '@/components/ui/dialog'
 import {
   Heart,
   Activity,
@@ -11,6 +18,7 @@ import {
   AlertTriangle,
   Gauge,
   UploadCloud,
+  Loader2,
 } from 'lucide-react'
 import { ApiError } from '@/lib/api'
 import {
@@ -22,7 +30,7 @@ import {
 } from '@/lib/health-api'
 import { useChat } from '../context/ChatContext'
 
-const DURATION = 30 // detik
+const DURATION = 20 // detik
 const POLL_INTERVAL = 2000
 const POLL_TIMEOUT = 60000
 
@@ -108,10 +116,10 @@ export const RppgMeasure: React.FC = () => {
   const [phase, setPhase] = useState<Phase>('idle')
   const [elapsed, setElapsed] = useState(0)
   const [message, setMessage] = useState<string | null>(null)
-  const [recording, setRecording] = useState<{ blob: Blob; mimeType: string; url: string } | null>(
-    null
-  )
+  const [recording, setRecording] = useState<{ blob: Blob; mimeType: string } | null>(null)
   const [result, setResult] = useState<MeasurementResult | null>(null)
+  /** Popup hasil bisa ditutup tanpa membuang rekaman/hasilnya. */
+  const [showResult, setShowResult] = useState(false)
 
   useEffect(() => {
     let cancelled = false
@@ -145,12 +153,6 @@ export const RppgMeasure: React.FC = () => {
     }
   }, [])
 
-  // Object URL pratinjau dilepas begitu rekamannya diganti atau komponen tutup.
-  useEffect(() => {
-    if (!recording) return
-    return () => URL.revokeObjectURL(recording.url)
-  }, [recording])
-
   const stopRecording = () => {
     window.clearInterval(timerRef.current)
     if (recorderRef.current?.state === 'recording') recorderRef.current.stop()
@@ -164,6 +166,7 @@ export const RppgMeasure: React.FC = () => {
     if (!mimeType) {
       setPhase('failed')
       setMessage('Browser ini tidak mendukung perekaman video.')
+      setShowResult(true)
       return
     }
 
@@ -172,6 +175,7 @@ export const RppgMeasure: React.FC = () => {
     setResult(null)
     setMessage(null)
     setElapsed(0)
+    setShowResult(false)
     setPhase('recording')
 
     const recorder = new MediaRecorder(stream, { mimeType })
@@ -181,9 +185,9 @@ export const RppgMeasure: React.FC = () => {
     }
     recorder.onstop = () => {
       window.clearInterval(timerRef.current)
-      const blob = new Blob(chunksRef.current, { type: mimeType })
-      setRecording({ blob, mimeType, url: URL.createObjectURL(blob) })
+      setRecording({ blob: new Blob(chunksRef.current, { type: mimeType }), mimeType })
       setPhase('recorded')
+      setShowResult(true)
     }
     recorder.start()
 
@@ -252,116 +256,128 @@ export const RppgMeasure: React.FC = () => {
   }
 
   const isBusy = phase === 'uploading' || phase === 'processing'
-  const progress =
-    phase === 'recording' ? Math.min(1, elapsed / DURATION) : phase === 'idle' ? 0 : 1
+  const isRecording = phase === 'recording'
   const rejected = result?.signal_quality_flag === 'rejected'
   const qualityPercent =
     result?.signal_quality_score != null ? Math.round(result.signal_quality_score * 100) : null
-  const showPreview = recording !== null && phase !== 'recording'
+  const remaining = Math.max(0, Math.ceil(DURATION - elapsed))
 
-  const statusText = () => {
-    if (phase === 'recording') return 'Merekam wajah…'
-    if (phase === 'recorded') return 'Rekaman siap. Tinjau lalu unggah untuk dianalisis.'
-    if (phase === 'uploading') return 'Mengunggah rekaman…'
-    if (phase === 'processing') return 'Server sedang menganalisis sinyal mikrovaskular…'
-    if (phase === 'done') return rejected ? 'Sinyal ditolak' : 'Pengukuran selesai'
-    if (phase === 'failed') return 'Pengukuran gagal'
-    return `Tekan tombol rekam untuk mulai (${DURATION} detik)`
+  const dialogTitle = () => {
+    if (phase === 'recorded') return 'Rekaman Siap'
+    if (phase === 'uploading') return 'Mengunggah Rekaman'
+    if (phase === 'processing') return 'Menganalisis Sinyal'
+    if (phase === 'failed') return 'Pengukuran Gagal'
+    return rejected ? 'Sinyal Ditolak' : 'Hasil Scan'
   }
 
   return (
-    <div className="space-y-5">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-ink-900 tracking-tight">
-            Ukur rPPG
-          </h1>
-          <p className="text-xs sm:text-sm text-ink-500 mt-0.5">
-            Rekam wajah selama {DURATION} detik, lalu unggah untuk dianalisis server.
-          </p>
+    <div className="flex flex-col flex-1 min-h-0 gap-3">
+      {/* KAMERA PENUH — tombol rekam mengambang di atasnya */}
+      <div className="relative w-full flex-1 min-h-90 rounded-3xl overflow-hidden bg-ink-950 border border-ink-800">
+        {cameraError ? (
+          <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 text-center px-6">
+            <CameraOff className="w-8 h-8 text-ink-500" />
+            <span className="text-sm font-bold text-ink-200">Kamera tidak dapat diakses</span>
+            <p className="text-xs text-ink-400 max-w-xs">
+              Izinkan akses kamera di browser lalu muat ulang halaman. ({cameraError})
+            </p>
+          </div>
+        ) : (
+          <video
+            ref={videoRef}
+            autoPlay
+            playsInline
+            muted
+            className="absolute inset-0 w-full h-full object-contain -scale-x-100"
+          />
+        )}
+
+        {/* Bingkai oval sebagai panduan posisi wajah */}
+        {!cameraError && (
+          <div className="absolute inset-0 flex items-start justify-center pt-[8%] pointer-events-none">
+            <div
+              className={`w-[46%] max-w-64 aspect-3/4 border-2 border-dashed rounded-[50%] transition-colors ${
+                isRecording ? 'border-emerald-400' : 'border-clay-400/70 animate-pulse'
+              }`}
+            />
+          </div>
+        )}
+
+        {/* Status kamera */}
+        <div className="absolute top-4 left-4 right-4 flex items-start justify-between gap-2">
+
+          {isRecording && (
+            <span className="flex items-center gap-1.5 bg-black/60 backdrop-blur-xs px-3 py-1.5 rounded-full text-xs text-white font-mono font-bold">
+              <span className="w-2 h-2 rounded-full bg-rose-500 animate-pulse" />
+              {remaining}s
+            </span>
+          )}
+
+          {!isRecording && (result || recording) && !showResult && (
+            <button
+              type="button"
+              onClick={() => setShowResult(true)}
+              className="bg-black/60 backdrop-blur-xs px-3 py-1.5 rounded-full text-xs text-white font-semibold hover:bg-black/75 transition cursor-pointer"
+            >
+              Lihat hasil
+            </button>
+          )}
         </div>
-        <Chip
-          size="sm"
-          color={cameraError ? 'warning' : ready ? 'success' : 'neutral'}
-          variant="soft"
-          className="font-semibold text-xs self-start sm:self-auto"
-        >
-          ● {cameraError ? 'Kamera Nonaktif' : ready ? 'Kamera Aktif' : 'Menyiapkan Kamera…'}
-        </Chip>
+
+        {/* Bilah progres perekaman */}
+        {isRecording && (
+          <div className="absolute bottom-32 left-6 right-6 h-1.5 bg-white/25 rounded-full overflow-hidden">
+            <div
+              className="h-full bg-rose-500 transition-all duration-200"
+              style={{ width: `${Math.min(100, (elapsed / DURATION) * 100)}%` }}
+            />
+          </div>
+        )}
+
+        {/* TOMBOL REKAM */}
+        <div className="absolute bottom-6 left-0 right-0 flex flex-col items-center gap-2">
+          <button
+            type="button"
+            onClick={isRecording ? stopRecording : startRecording}
+            disabled={!ready || isBusy}
+            aria-label={isRecording ? 'Hentikan rekaman' : 'Mulai rekam'}
+            className="w-20 h-20 rounded-3xl bg-white/95 border-2 border-white flex items-center justify-center shadow-2xl transition hover:scale-105 active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+          >
+            <span
+              className={`bg-rose-600 transition-all ${
+                isRecording ? 'w-6 h-6 rounded-md' : 'w-11 h-11 rounded-full'
+              }`}
+            />
+          </button>
+          <span className="text-xs font-semibold text-white/90 drop-shadow">
+            {isRecording
+              ? 'Ketuk untuk berhenti'
+              : isBusy
+              ? 'Memproses…'
+              : `Rekam ${DURATION} detik`}
+          </span>
+        </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
-        {/* VIEWFINDER / PRATINJAU + KONTROL */}
-        <Card className="lg:col-span-8 p-5 sm:p-6 rounded-2xl sm:rounded-3xl bg-white border border-ink-200/80 shadow-xs space-y-5">
-          <div className="relative w-full aspect-4/3 bg-ink-950 rounded-2xl overflow-hidden border border-ink-800">
-            {cameraError ? (
-              <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 text-center px-6">
-                <CameraOff className="w-7 h-7 text-ink-500" />
-                <span className="text-sm font-bold text-ink-200">Kamera tidak dapat diakses</span>
-                <p className="text-xs text-ink-400 max-w-xs">
-                  Izinkan akses kamera di browser lalu muat ulang halaman. ({cameraError})
-                </p>
-              </div>
-            ) : showPreview ? (
-              <video
-                key={recording.url}
-                src={recording.url}
-                controls
-                playsInline
-                className="absolute inset-0 w-full h-full object-contain bg-black"
-              />
-            ) : (
-              <video
-                ref={videoRef}
-                autoPlay
-                playsInline
-                muted
-                className="absolute inset-0 w-full h-full object-cover -scale-x-100"
-              />
-            )}
+      <p className="shrink-0 text-center text-xs text-ink-500">
+        Duduk tenang dengan cahaya merata di wajah, tanpa masker atau penutup dahi.
+      </p>
 
-            {/* Bingkai oval hanya relevan saat membidik, bukan saat meninjau */}
-            {!showPreview && !cameraError && (
-              <div className="absolute inset-0 flex items-start justify-center pt-[12%] pointer-events-none">
-                <div
-                  className={`w-[38%] aspect-3/4 border-2 border-dashed rounded-[50%] transition-colors ${
-                    phase === 'recording' ? 'border-emerald-400' : 'border-clay-400/70 animate-pulse'
-                  }`}
-                />
-              </div>
-            )}
-
-            <div className="absolute top-3 right-3 flex items-center gap-1.5 bg-black/60 backdrop-blur-xs px-2.5 py-1 rounded-full text-[11px] text-emerald-400 font-mono">
-              <span
-                className={`w-2 h-2 rounded-full bg-emerald-400 ${
-                  phase === 'recording' ? 'animate-pulse' : ''
-                }`}
-              />
-              {phase === 'recording'
-                ? `${Math.floor(elapsed)}s / ${DURATION}s`
-                : showPreview
-                ? 'Pratinjau'
-                : 'Siap'}
-            </div>
-          </div>
-
-          {/* Progress */}
-          <div className="space-y-1.5">
-            <div className="flex justify-between text-xs font-semibold text-ink-600">
-              <span>{statusText()}</span>
-              <span className="text-clay-700 font-mono font-bold">
-                {isBusy ? '…' : `${Math.round(progress * 100)}%`}
-              </span>
-            </div>
-            <div className="w-full bg-ink-100 rounded-full h-2 overflow-hidden">
-              <div
-                className={`h-2 rounded-full transition-all duration-200 ${
-                  isBusy ? 'bg-clay-400 animate-pulse' : 'bg-clay-700'
-                }`}
-                style={{ width: `${progress * 100}%` }}
-              />
-            </div>
-          </div>
+      {/* POPUP HASIL SCAN / STATUS UNGGAH */}
+      <Dialog open={showResult} onOpenChange={setShowResult}>
+        <DialogContent className="w-full max-w-md bg-white rounded-3xl p-6 border border-ink-200 shadow-2xl space-y-5 max-h-[85vh] overflow-y-auto">
+          <DialogHeader className="pb-3 border-b border-ink-100">
+            <DialogTitle className="text-base font-bold text-ink-900 tracking-tight">
+              {dialogTitle()}
+            </DialogTitle>
+            <DialogDescription className="text-xs text-ink-500">
+              {phase === 'recorded'
+                ? `Rekaman ${DURATION} detik siap dikirim untuk dianalisis.`
+                : isBusy
+                ? 'Mohon tunggu, jangan tutup halaman ini.'
+                : 'Hasil analisis sinyal mikrovaskular wajah.'}
+            </DialogDescription>
+          </DialogHeader>
 
           {message && (
             <div className="flex items-start gap-2 p-3 rounded-xl bg-amber-50 border border-amber-200 text-xs text-amber-800 font-medium">
@@ -370,140 +386,117 @@ export const RppgMeasure: React.FC = () => {
             </div>
           )}
 
-          {/* KONTROL */}
-          <div className="flex flex-col items-center gap-3 pt-1">
-            <button
-              type="button"
-              onClick={phase === 'recording' ? stopRecording : startRecording}
-              disabled={!ready || isBusy}
-              aria-label={phase === 'recording' ? 'Hentikan rekaman' : 'Mulai rekam'}
-              className="w-20 h-20 rounded-3xl bg-white border-2 border-ink-300 flex items-center justify-center shadow-xs transition hover:border-rose-400 active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
-            >
-              <span
-                className={`bg-rose-600 transition-all ${
-                  phase === 'recording' ? 'w-6 h-6 rounded-md' : 'w-11 h-11 rounded-full'
-                }`}
-              />
-            </button>
+          {isBusy && (
+            <div className="flex flex-col items-center gap-3 py-6">
+              <Loader2 className="w-8 h-8 text-clay-600 animate-spin" />
+              <span className="text-xs font-semibold text-ink-600">
+                {phase === 'uploading' ? 'Mengunggah rekaman…' : 'Server sedang menganalisis…'}
+              </span>
+            </div>
+          )}
 
-            <span className="text-xs font-semibold text-ink-500">
-              {phase === 'recording'
-                ? 'Ketuk untuk berhenti lebih awal'
-                : isBusy
-                ? 'Menunggu hasil dari server'
-                : recording
-                ? 'Rekam ulang'
-                : `Rekam ${DURATION} detik`}
-            </span>
+          {phase === 'done' && !rejected && result && (
+            <div className="space-y-3">
+              {result.readings.map((reading: Reading) => {
+                const meta = describeMetric(reading.metric_type)
+                return (
+                  <div key={reading.metric_type} className="flex items-center gap-3">
+                    <div
+                      className={`w-10 h-10 rounded-xl ${meta.bg} border ${meta.ring} flex items-center justify-center ${meta.fg} shrink-0`}
+                    >
+                      <meta.icon className="w-5 h-5" />
+                    </div>
+                    <div className="text-left">
+                      <span className="text-xs font-semibold text-ink-500 block capitalize">
+                        {meta.label}
+                      </span>
+                      <div className="flex items-baseline gap-1">
+                        <span className="text-2xl font-extrabold text-ink-900 tracking-tight leading-none">
+                          {Math.round(reading.value)}
+                        </span>
+                        <span className="text-xs font-semibold text-ink-400 uppercase">
+                          {reading.unit ?? ''}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                )
+              })}
 
-            {recording && !isBusy && phase !== 'done' && (
-              <Button
-                size="sm"
-                onClick={() => void upload()}
-                className="px-6 py-2.5 rounded-full text-xs font-bold bg-ink-900 hover:bg-ink-800 text-white shadow-xs cursor-pointer"
-              >
-                <UploadCloud className="w-3.5 h-3.5 text-clay-300" />
-                Unggah & Analisis
-              </Button>
-            )}
-          </div>
-        </Card>
+              <div className="pt-3 border-t border-ink-100 flex items-center justify-between text-xs">
+                <span className="text-ink-500 font-medium">Kualitas Sinyal</span>
+                <Chip
+                  size="sm"
+                  variant="soft"
+                  color={result.signal_quality_flag === 'good' ? 'success' : 'warning'}
+                  className="font-bold text-[10px]"
+                >
+                  {QUALITY_LABELS[result.signal_quality_flag ?? ''] ?? 'Tidak diketahui'}
+                  {qualityPercent !== null ? ` · ${qualityPercent}%` : ''}
+                </Chip>
+              </div>
 
-        {/* HASIL */}
-        <div className="lg:col-span-4 space-y-4">
-          <Card className="p-5 sm:p-6 rounded-2xl sm:rounded-3xl bg-white border border-ink-200/80 shadow-xs space-y-4">
-            <div className="flex items-center justify-between pb-3 border-b border-ink-100">
-              <h3 className="text-sm font-bold text-ink-900 tracking-tight">Hasil Pengukuran</h3>
-              {(phase === 'done' || phase === 'failed') && (
+              {result.disclaimer && (
+                <p className="text-[11px] text-ink-400 leading-relaxed pt-3 border-t border-ink-100">
+                  {result.disclaimer}
+                </p>
+              )}
+            </div>
+          )}
+
+          <DialogFooter className="flex items-center justify-end gap-2 pt-3 border-t border-ink-100">
+            {phase === 'recorded' && (
+              <>
                 <Button
                   size="sm"
                   variant="ghost"
-                  onClick={startRecording}
-                  disabled={!ready}
-                  className="text-xs font-semibold text-ink-600 rounded-full cursor-pointer"
+                  onClick={() => {
+                    setShowResult(false)
+                    startRecording()
+                  }}
+                  className="px-4 py-2 rounded-full text-xs font-semibold text-ink-600 hover:bg-ink-100 cursor-pointer"
                 >
-                  <RotateCcw className="w-3.5 h-3.5" /> Rekam Ulang
+                  <RotateCcw className="w-3.5 h-3.5" />
+                  Rekam Ulang
                 </Button>
-              )}
-            </div>
-
-            {!result ? (
-              <p className="text-xs text-ink-500 py-6 text-center">
-                {isBusy
-                  ? 'Menunggu hasil analisis server…'
-                  : phase === 'recorded'
-                  ? 'Rekaman belum diunggah. Tekan "Unggah & Analisis" untuk mendapatkan hasil.'
-                  : 'Belum ada hasil. Rekam dengan pencahayaan yang cukup dan wajah tidak tertutup.'}
-              </p>
-            ) : rejected ? (
-              // Kontrak: jangan tampilkan angka apa pun kalau sinyalnya ditolak.
-              <div className="py-6 text-center space-y-2">
-                <AlertTriangle className="w-6 h-6 text-amber-500 mx-auto" />
-                <p className="text-xs text-ink-600">
-                  Sinyal tidak cukup andal untuk ditampilkan. Rekam ulang dengan cahaya merata dan
-                  tanpa banyak gerakan.
-                </p>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {result.readings.map((reading: Reading) => {
-                  const meta = describeMetric(reading.metric_type)
-                  return (
-                    <div key={reading.metric_type} className="flex items-center gap-3">
-                      <div
-                        className={`w-10 h-10 rounded-xl ${meta.bg} border ${meta.ring} flex items-center justify-center ${meta.fg} shrink-0`}
-                      >
-                        <meta.icon className="w-5 h-5" />
-                      </div>
-                      <div className="text-left">
-                        <span className="text-xs font-semibold text-ink-500 block capitalize">
-                          {meta.label}
-                        </span>
-                        <div className="flex items-baseline gap-1">
-                          <span className="text-2xl font-extrabold text-ink-900 tracking-tight leading-none">
-                            {Math.round(reading.value)}
-                          </span>
-                          <span className="text-xs font-semibold text-ink-400 uppercase">
-                            {reading.unit ?? ''}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  )
-                })}
-
-                <div className="pt-3 border-t border-ink-100 flex items-center justify-between text-xs">
-                  <span className="text-ink-500 font-medium">Kualitas Sinyal</span>
-                  <Chip
-                    size="sm"
-                    variant="soft"
-                    color={result.signal_quality_flag === 'good' ? 'success' : 'warning'}
-                    className="font-bold text-[10px]"
-                  >
-                    {QUALITY_LABELS[result.signal_quality_flag ?? ''] ?? 'Tidak diketahui'}
-                    {qualityPercent !== null ? ` · ${qualityPercent}%` : ''}
-                  </Chip>
-                </div>
-              </div>
+                <Button
+                  size="sm"
+                  onClick={() => void upload()}
+                  className="px-6 py-2 rounded-full text-xs font-bold bg-ink-900 hover:bg-ink-800 text-white shadow-xs cursor-pointer"
+                >
+                  <UploadCloud className="w-3.5 h-3.5 text-clay-300" />
+                  Unggah & Analisis
+                </Button>
+              </>
             )}
 
-            {result?.disclaimer && (
-              <p className="text-[11px] text-ink-400 leading-relaxed pt-3 border-t border-ink-100">
-                {result.disclaimer}
-              </p>
+            {(phase === 'done' || phase === 'failed') && (
+              <>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => setShowResult(false)}
+                  className="px-4 py-2 rounded-full text-xs font-semibold text-ink-600 hover:bg-ink-100 cursor-pointer"
+                >
+                  Tutup
+                </Button>
+                <Button
+                  size="sm"
+                  onClick={() => {
+                    setShowResult(false)
+                    startRecording()
+                  }}
+                  disabled={!ready}
+                  className="px-6 py-2 rounded-full text-xs font-bold bg-ink-900 hover:bg-ink-800 text-white shadow-xs cursor-pointer"
+                >
+                  <RotateCcw className="w-3.5 h-3.5 text-clay-300" />
+                  Ukur Lagi
+                </Button>
+              </>
             )}
-          </Card>
-
-          <Card className="p-5 rounded-2xl bg-ink-50/70 border border-ink-200/80 shadow-none space-y-2">
-            <h4 className="text-xs font-bold text-ink-800">Tips Pengukuran</h4>
-            <ul className="text-xs text-ink-600 space-y-1.5 list-disc pl-4">
-              <li>Cahaya merata di wajah, hindari backlight dari jendela.</li>
-              <li>Duduk diam dan bernapas normal selama perekaman.</li>
-              <li>Lepas masker atau apapun yang menutupi dahi dan pipi.</li>
-            </ul>
-          </Card>
-        </div>
-      </div>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

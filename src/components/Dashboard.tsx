@@ -1,5 +1,4 @@
 import React, { useState, useMemo, useEffect, useCallback } from 'react'
-import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Button, ButtonGroup } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Chip } from '@/components/ui/badge'
@@ -36,8 +35,10 @@ import {
   Check,
   Plus,
   LogOut,
+  Sparkles,
   ShieldCheck,
   UserPen,
+  User,
 } from 'lucide-react'
 import { useChat } from '../context/ChatContext'
 import FamilyMonitoring from './FamilyMonitoring'
@@ -66,7 +67,6 @@ import { ApiError } from '@/lib/api'
 import {
   ageFrom,
   getAccount,
-  initialsFrom,
   updateAccount,
   updateProfile,
   type Account,
@@ -88,6 +88,7 @@ import {
   type TrendBucket,
 } from '@/lib/health-api'
 import { useAuth } from '../context/AuthContext'
+import { NAV_PATHS, ROUTES, navIdFromPath, navigate, usePath } from '@/lib/router'
 
 const toActivityItem = (activity: ActivityResponse): ActivityItem => {
   const category = fromApiCategory(activity.category)
@@ -99,7 +100,6 @@ export interface UserProfile {
   id: string
   name: string
   role: string
-  initials: string
   age: number
   avatarBg: string
   hr: number
@@ -147,7 +147,10 @@ export interface DashboardProps {
 export const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
   const { addAiMessage } = useChat()
   const { profile, refreshProfile } = useAuth()
-  const [activeNav, setActiveNav] = useState<string>('dashboard')
+  // Tab aktif berasal dari URL, jadi tiap menu punya alamatnya sendiri dan
+  // tombol kembali browser berfungsi.
+  const activeNav = navIdFromPath(usePath())
+  const goTo = (id: string) => navigate(NAV_PATHS[id] ?? ROUTES.dashboard)
   const [isLogoutDialogOpen, setIsLogoutDialogOpen] = useState(false)
   const [isProfileDialogOpen, setIsProfileDialogOpen] = useState(false)
   const [account, setAccount] = useState<Account | null>(null)
@@ -176,6 +179,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
   const [latestSession, setLatestSession] = useState<MeasurementSession | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [loadError, setLoadError] = useState<string | null>(null)
+  /** Kartu "Denyut Mingguan" selalu 7 hari terakhir, tidak ikut rentang kalender. */
+  const [weeklyHr, setWeeklyHr] = useState<TrendBucket[]>([])
 
   const range = useMemo(() => rangeToQuery(dateRange), [dateRange])
   const profileId = profile?.id
@@ -216,6 +221,13 @@ export const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
   useEffect(() => {
     void reload()
   }, [reload])
+
+  useEffect(() => {
+    const lastWeek = rangeToQuery({ from: daysAgo(6), to: new Date() })
+    getVitalsTrend('heart_rate', { ...lastWeek, bucket: 'day', family_member_id: profileId })
+      .then((r) => setWeeklyHr(r.buckets))
+      .catch(() => setWeeklyHr([]))
+  }, [profileId])
 
   // Email & telepon hanya dibutuhkan saat dialog profil dibuka.
   useEffect(() => {
@@ -291,19 +303,22 @@ export const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
 
   /** Rata-rata HR pada rentang, untuk kartu bar mingguan. */
   const weeklyBars = useMemo(() => {
-    const values = currentChartData.filter((d) => d.hr !== null)
-    const max = Math.max(...values.map((d) => d.hr as number), 1)
-    const peak = values.reduce<number | null>(
-      (best, d) => (best === null || (d.hr as number) > best ? (d.hr as number) : best),
-      null
-    )
-    return currentChartData.map((d) => ({
-      label: d.label.replace(/\s*\(.*\)$/, ''),
-      value: d.hr,
-      height: d.hr !== null ? `${Math.max(8, ((d.hr as number) / max) * 100)}%` : '0%',
-      highlight: d.hr !== null && d.hr === peak,
+    const max = Math.max(...weeklyHr.map((b) => b.avg), 1)
+    const peak = weeklyHr.reduce((best, b) => Math.max(best, b.avg), 0)
+    return weeklyHr.map((bucket) => ({
+      label: new Date(bucket.bucket).toLocaleDateString('id-ID', { weekday: 'short' }),
+      value: bucket.avg,
+      height: `${Math.max(8, (bucket.avg / max) * 100)}%`,
+      highlight: bucket.avg === peak,
     }))
-  }, [currentChartData])
+  }, [weeklyHr])
+
+  /** Rata-rata tertimbang jumlah pengukuran, bukan rata-rata dari rata-rata. */
+  const weeklyAverage = useMemo(() => {
+    const totalCount = weeklyHr.reduce((sum, b) => sum + b.count, 0)
+    if (totalCount === 0) return null
+    return weeklyHr.reduce((sum, b) => sum + b.avg * b.count, 0) / totalCount
+  }, [weeklyHr])
 
   // baseline.is_active=false berarti data belum cukup (butuh ≥14 hari).
   const hrBaseline = heartRate?.baseline?.is_active ? heartRate.baseline.mean : null
@@ -353,7 +368,6 @@ export const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
     id: profile?.id ?? '',
     name: profile?.full_name ?? 'Profil',
     role: profile?.relationship_label ?? (profile?.role === 'admin' ? 'Admin Keluarga' : 'Anggota'),
-    initials: initialsFrom(profile?.full_name ?? ''),
     age: ageFrom(profile?.date_of_birth ?? null) ?? 0,
     avatarBg: 'bg-clay-700',
     hr: Math.round(heartRate?.avg ?? 0),
@@ -413,16 +427,19 @@ export const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
   }
 
 
+  // Copilot dan rPPG mengisi tinggi layar; sisanya mengalir seperti biasa.
+  const isFullHeight = activeNav === 'copilot' || activeNav === 'rppg'
+
   return (
     <div
       className={`min-h-screen bg-sand text-ink-900 flex flex-col items-center justify-start p-3 sm:p-5 lg:p-7 font-sans antialiased w-full ${
-        activeNav === 'copilot' ? 'h-dvh max-h-dvh overflow-hidden' : ''
+        isFullHeight ? 'h-dvh max-h-dvh overflow-hidden' : ''
       }`}
     >
       {/* MAIN CONTAINER */}
       <div
         className={`w-full max-w-[98vw] 2xl:max-w-[1920px] mx-auto ${
-          activeNav === 'copilot'
+          isFullHeight
             ? 'flex-1 flex flex-col min-h-0 space-y-3 sm:space-y-4 lg:space-y-5'
             : 'space-y-6'
         }`}
@@ -451,8 +468,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
           <nav className="order-3 md:order-2 w-full md:w-auto min-w-0 flex flex-wrap items-center justify-center md:justify-start gap-1 bg-ink-100/80 p-1.5 rounded-2xl md:rounded-full border border-ink-200/60">
             {[
               { id: 'dashboard', label: 'Dashboard' },
-              { id: 'copilot', label: 'Copilot' },
-              { id: 'rppg', label: 'Ukur rPPG' },
+              { id: 'rppg', label: 'Ukur BPM' },
               { id: 'riwayat', label: 'Riwayat' },
               { id: 'aktivitas', label: 'Aktivitas' },
               { id: 'keluarga', label: 'Keluarga' },
@@ -461,7 +477,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
                 key={tab.id}
                 size="sm"
                 variant={activeNav === tab.id ? 'default' : 'ghost'}
-                onClick={() => setActiveNav(tab.id)}
+                onClick={() => goTo(tab.id)}
                 className={`px-3 sm:px-4 py-1.5 rounded-full text-xs font-semibold transition cursor-pointer shrink-0 ${
                   activeNav === tab.id
                     ? 'bg-ink-900 text-white shadow-xs font-bold'
@@ -471,6 +487,22 @@ export const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
                 {tab.label}
               </Button>
             ))}
+
+            {/* Copilot dipisah di ujung kanan dengan aksen clay agar menonjol */}
+            <span className="hidden md:block w-px h-5 bg-ink-300/70 mx-1" aria-hidden />
+            <Button
+              size="sm"
+              variant={activeNav === 'copilot' ? 'default' : 'ghost'}
+              onClick={() => goTo('copilot')}
+              className={`px-3 sm:px-4 py-1.5 rounded-full text-xs font-bold transition cursor-pointer shrink-0 flex items-center gap-1.5 ${
+                activeNav === 'copilot'
+                  ? 'bg-clay-600 text-white shadow-sm hover:bg-clay-700'
+                  : 'text-clay-700 bg-clay-50 border border-clay-200 hover:bg-clay-100'
+              }`}
+            >
+              <Sparkles className={`w-3.5 h-3.5 ${activeNav === 'copilot' ? 'text-white' : 'text-clay-600'}`} />
+              Copilot
+            </Button>
           </nav>
 
           {/* Right Action Icons & User Account Avatar (matching reference header) */}
@@ -484,11 +516,9 @@ export const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
               title="Edit profil saya"
               className="flex items-center gap-2 pl-2 border-l border-ink-200 rounded-r-full pr-2 py-1 hover:bg-ink-100/70 transition cursor-pointer"
             >
-              <Avatar size="sm" className={`${currentUser.avatarBg} text-white font-bold text-xs shadow-xs`}>
-                <AvatarFallback className="bg-clay-700 text-white font-bold">
-                  {currentUser.initials}
-                </AvatarFallback>
-              </Avatar>
+              <span className="w-8 h-8 rounded-full bg-clay-700 text-white flex items-center justify-center shadow-xs shrink-0">
+                <User className="w-4 h-4" />
+              </span>
               <div className="text-left hidden sm:flex flex-col">
                 <span className="text-xs font-bold text-ink-800 leading-tight">
                   {currentUser.name}
@@ -517,7 +547,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
         {/* 2. MAIN DASHBOARD CONTENT */}
         <main
           className={`w-full ${
-            activeNav === 'copilot' ? 'flex-1 flex flex-col min-h-0' : 'space-y-6'
+            isFullHeight ? 'flex-1 flex flex-col min-h-0' : 'space-y-6'
           }`}
         >
           {activeNav === 'keluarga' ? (
@@ -535,7 +565,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
           ) : activeNav === 'riwayat' ? (
             <HistoryAndTrends
               member={currentUser}
-              onNavigateToRppg={() => setActiveNav('rppg')}
+              onNavigateToRppg={() => goTo('rppg')}
             />
           ) : activeNav !== 'dashboard' ? (
             <div className="py-20 text-center">
@@ -684,12 +714,12 @@ export const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
                   {/* Card 4: TOMBOL CTA MULAI UKUR rPPG (Sesuai Posisi & Ukuran Sketsa User) */}
                   <Card
                     onClick={() => {
-                      setActiveNav('rppg')
+                      goTo('rppg')
                     }}
                     role="button"
                     tabIndex={0}
                     onKeyDown={(e) => {
-                      if (e.key === 'Enter' || e.key === ' ') setActiveNav('rppg')
+                      if (e.key === 'Enter' || e.key === ' ') goTo('rppg')
                     }}
                     className="p-5 rounded-2xl bg-clay-600 hover:bg-clay-700 text-white border border-clay-500 shadow-xs hover:shadow-lg active:scale-[0.99] transition-all cursor-pointer flex flex-col justify-between group select-none space-y-3"
                   >
@@ -705,7 +735,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
                         Sensor Optik Kamera
                       </span>
                       <h3 className="text-xl font-extrabold text-white tracking-tight leading-tight mt-0.5 group-hover:text-clay-100 transition-colors">
-                        Mulai Ukur rPPG
+                        Mulai Ukur BPM
                       </h3>
                       <p className="text-xs text-clay-100/85 mt-1">
                         Pindai detak jantung & vital via webcam
@@ -737,17 +767,6 @@ export const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
                       </div>
 
                       <div className="flex flex-wrap items-center gap-4">
-                        <div className="flex items-center gap-2">
-                          <Switch
-                            id="activity-overlay"
-                            checked={showActivityOverlay}
-                            onCheckedChange={setShowActivityOverlay}
-                          />
-                          <Label htmlFor="activity-overlay" className="text-xs font-semibold text-ink-700 cursor-pointer">
-                            Penanda Aktivitas
-                          </Label>
-                        </div>
-
                         <div className="flex items-center gap-2">
                           <Switch
                             id="hrv-comparison"
@@ -1025,7 +1044,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
 
                       <Button
                         size="sm"
-                        onClick={() => setActiveNav('aktivitas')}
+                        onClick={() => goTo('aktivitas')}
                         className="bg-ink-900 hover:bg-ink-800 text-white rounded-full font-bold px-4 py-1.5 text-xs shadow-xs cursor-pointer flex items-center gap-1.5 self-start sm:self-auto"
                       >
                         <Plus className="w-3.5 h-3.5 text-sage-300" />
@@ -1052,7 +1071,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
                                 Belum ada aktivitas yang dicatat hari ini.{' '}
                                 <button
                                   type="button"
-                                  onClick={() => setActiveNav('aktivitas')}
+                                  onClick={() => goTo('aktivitas')}
                                   className="underline text-ink-700 font-semibold hover:text-ink-900 cursor-pointer"
                                 >
                                   Klik "Catat Aktivitas"
@@ -1221,7 +1240,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
 
                     <button
                       type="button"
-                      onClick={() => setActiveNav('riwayat')}
+                      onClick={() => goTo('riwayat')}
                       className="w-full text-center text-xs font-semibold text-ink-600 hover:text-ink-900 pt-1 border-t border-ink-100 cursor-pointer"
                     >
                       {anomalies.length > 3
@@ -1259,15 +1278,15 @@ export const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
                     </div>
 
                     <div className="text-center text-xs text-ink-500 pt-1 border-t border-ink-100">
-                      {heartRate ? (
+                      {weeklyAverage !== null ? (
                         <>
-                          Rata-rata:{' '}
+                          Rata-rata 7 hari:{' '}
                           <strong className="text-ink-800 font-bold">
-                            {heartRate.avg.toFixed(1)} BPM
+                            {weeklyAverage.toFixed(1)} BPM
                           </strong>
                         </>
                       ) : (
-                        'Belum ada pengukuran pada rentang ini'
+                        'Belum ada pengukuran 7 hari terakhir'
                       )}
                     </div>
                   </Card>

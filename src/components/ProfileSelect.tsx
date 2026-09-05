@@ -12,9 +12,9 @@ import {
   DialogDescription,
   DialogFooter,
 } from '@/components/ui/dialog'
-import { Lock, ChevronRight, AlertCircle, LogOut, Users } from 'lucide-react'
+import { Lock, ChevronRight, AlertCircle, LogOut, Users, User } from 'lucide-react'
 import { ApiError } from '@/lib/api'
-import { ageFrom, initialsFrom, listProfiles, type Profile } from '@/lib/auth-api'
+import { ageFrom, listProfiles, type Profile } from '@/lib/auth-api'
 import { useAuth } from '../context/AuthContext'
 
 export const ProfileSelect: React.FC = () => {
@@ -117,8 +117,8 @@ export const ProfileSelect: React.FC = () => {
                     disabled={pending !== null}
                     className="w-full flex items-center gap-3.5 p-3 rounded-2xl border border-ink-200/80 bg-white hover:border-clay-400 hover:bg-clay-50/40 transition text-left cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
                   >
-                    <span className="w-11 h-11 rounded-xl bg-ink-900 text-white font-bold text-sm flex items-center justify-center shrink-0">
-                      {initialsFrom(profile.full_name)}
+                    <span className="w-11 h-11 rounded-full bg-ink-900 text-white flex items-center justify-center shrink-0">
+                      <User className="w-5 h-5" />
                     </span>
 
                     <span className="min-w-0 flex-1">

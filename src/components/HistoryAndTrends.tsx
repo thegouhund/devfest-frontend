@@ -447,7 +447,7 @@ export const HistoryAndTrends: React.FC<HistoryAndTrendsProps> = ({
             className="h-9 px-4 rounded-full text-xs font-bold bg-ink-900 text-white hover:bg-ink-800 shadow-xs cursor-pointer flex items-center justify-center gap-1.5 transition w-full sm:w-auto sm:shrink-0"
           >
             <Video className="w-3.5 h-3.5 text-clay-400" />
-            Ukur rPPG
+            Ukur BPM
           </Button>
         </div>
       </div>
@@ -510,13 +510,6 @@ export const HistoryAndTrends: React.FC<HistoryAndTrendsProps> = ({
                 onSort={handleSort}
               />
               <SortHeader
-                field="note"
-                label="Kondisi / Catatan"
-                activeField={sortField}
-                order={sortOrder}
-                onSort={handleSort}
-              />
-              <SortHeader
                 field="hr"
                 label="BPM"
                 activeField={sortField}
@@ -569,9 +562,9 @@ export const HistoryAndTrends: React.FC<HistoryAndTrendsProps> = ({
                     <div className="text-sm font-bold text-ink-900">{log.date}</div>
                     <div className="text-xs text-ink-500 font-medium">{log.time}</div>
                   </TableCell>
-                  <TableCell className="px-5 py-4">
+                  {/* <TableCell className="px-5 py-4">
                     <span className="text-sm text-ink-700">{log.note}</span>
-                  </TableCell>
+                  </TableCell> */}
                   <TableCell className="px-5 py-4">
                     <div className="flex items-center gap-1.5">
                       <span className="text-sm font-extrabold text-ink-900">{log.hr}</span>
