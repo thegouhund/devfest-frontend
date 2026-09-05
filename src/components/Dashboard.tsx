@@ -19,6 +19,7 @@ import { LineChart, ChartsReferenceLine } from '@mui/x-charts'
 import vitalMonitoringIllustration from '../assets/illustrations/vital-monitoring.svg'
 import { useChat } from '../context/ChatContext'
 import FamilyMonitoring from './FamilyMonitoring'
+import { HistoryAndTrends } from './HistoryAndTrends'
 
 interface ActivityItem {
   id: string
@@ -279,6 +280,17 @@ export const Dashboard: React.FC = () => {
               }}
               onBackToDashboard={() => setActiveNav('dashboard')}
             />
+          ) : activeNav === 'riwayat' ? (
+            <HistoryAndTrends member={currentUser} />
+          ) : activeNav !== 'dashboard' ? (
+            <div className="py-20 text-center">
+              <span className="text-sm font-bold text-slate-500 uppercase tracking-widest block mb-2">
+                Sedang Dibangun
+              </span>
+              <p className="text-slate-600">
+                Fitur <strong className="text-slate-900">{activeNav}</strong> belum tersedia pada fase ini.
+              </p>
+            </div>
           ) : (
             <>
               {/* Greeting Header */}
