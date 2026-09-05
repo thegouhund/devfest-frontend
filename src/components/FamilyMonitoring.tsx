@@ -26,6 +26,9 @@ import {
   AlertTriangle,
   ArrowUpRight,
   Sparkles,
+  Pill,
+  Dumbbell,
+  Coffee,
 } from 'lucide-react'
 import { useChat } from '../context/ChatContext'
 
@@ -247,7 +250,7 @@ export const FamilyMonitoring: React.FC<FamilyMonitoringProps> = ({
   return (
     <div className="space-y-6 w-full animate-in fade-in duration-200">
       {/* 1. TOP HEADER & SUMMARY CONTEXT */}
-      <div className="bg-gradient-to-br from-stone-50/80 via-white to-teal-50/30 border border-stone-200/80 rounded-3xl p-6 sm:p-7 shadow-xs">
+      <div className="bg-white border border-slate-200/80 rounded-2xl sm:rounded-3xl p-6 sm:p-7 shadow-xs">
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
           <div className="space-y-2 max-w-2xl text-left">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-teal-100/70 border border-teal-200/80 text-teal-900 text-xs font-bold">
@@ -265,11 +268,11 @@ export const FamilyMonitoring: React.FC<FamilyMonitoringProps> = ({
 
           {/* Quick Metrics & Actions */}
           <div className="flex flex-wrap items-center gap-3">
-            <div className="flex items-center gap-2 bg-white px-4 py-2.5 rounded-2xl border border-stone-200/80 shadow-2xs">
+            <div className="flex items-center gap-2 bg-white px-4 py-2.5 rounded-2xl border border-slate-200/80 shadow-2xs">
               <Users className="w-4 h-4 text-purple-600" />
               <span className="text-xs text-slate-500 font-medium">Terpantau:</span>
               <span className="text-sm font-bold text-slate-900">{members.length} Orang</span>
-              <span className="text-xs text-stone-300">|</span>
+              <span className="text-xs text-slate-300">|</span>
               {attentionCount > 0 ? (
                 <Badge variant="warning" className="text-xs font-bold px-2 py-0.5">
                   <AlertTriangle className="w-3 h-3 mr-0.5 text-amber-500" />
@@ -306,7 +309,7 @@ export const FamilyMonitoring: React.FC<FamilyMonitoringProps> = ({
         </div>
 
         {/* Filter and Search Bar */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pt-5 mt-5 border-t border-stone-100">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pt-5 mt-5 border-t border-slate-100">
           <div className="flex flex-wrap items-center gap-2">
             <span className="text-xs font-bold text-slate-500 mr-1">Filter:</span>
             <Button
@@ -316,7 +319,7 @@ export const FamilyMonitoring: React.FC<FamilyMonitoringProps> = ({
               className={`px-3.5 py-1.5 rounded-full text-xs font-semibold cursor-pointer transition ${
                 filter === 'semua'
                   ? 'bg-slate-900 text-white font-bold shadow-xs hover:bg-slate-800'
-                  : 'text-slate-600 hover:bg-stone-100 border-stone-200'
+                  : 'text-slate-600 hover:bg-slate-100 border-slate-200'
               }`}
             >
               Semua ({members.length})
@@ -340,7 +343,7 @@ export const FamilyMonitoring: React.FC<FamilyMonitoringProps> = ({
               className={`px-3.5 py-1.5 rounded-full text-xs font-semibold cursor-pointer transition ${
                 filter === 'optimal'
                   ? 'bg-teal-700 text-white font-bold shadow-xs hover:bg-teal-800 border-transparent'
-                  : 'text-slate-600 hover:bg-stone-100 border-stone-200'
+                  : 'text-slate-600 hover:bg-slate-100 border-slate-200'
               }`}
             >
               Optimal & Aktif ({optimalCount})
@@ -348,13 +351,13 @@ export const FamilyMonitoring: React.FC<FamilyMonitoringProps> = ({
           </div>
 
           <div className="relative w-full sm:w-64">
-            <Search className="w-4 h-4 text-stone-400 absolute left-3 top-2.5 pointer-events-none" />
+            <Search className="w-4 h-4 text-slate-400 absolute left-3 top-2.5 pointer-events-none" />
             <Input
               type="text"
               placeholder="Cari nama atau relasi..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-9 rounded-full bg-white text-xs border-stone-200 shadow-2xs h-9"
+              className="pl-9 rounded-full bg-white text-xs border-slate-200 shadow-2xs h-9"
             />
           </div>
         </div>
@@ -381,14 +384,14 @@ export const FamilyMonitoring: React.FC<FamilyMonitoringProps> = ({
           return (
             <Card
               key={member.id}
-              className={`p-5 sm:p-6 rounded-3xl bg-white border transition-shadow duration-200 space-y-4 shadow-sm hover:shadow ${
+              className={`p-5 sm:p-6 rounded-2xl sm:rounded-3xl bg-white border shadow-xs hover:shadow-md transition-shadow space-y-4 ${
                 isWarning
                   ? 'border-amber-300/80 ring-1 ring-amber-200/50 bg-amber-50/10'
-                  : 'border-stone-200/80'
+                  : 'border-slate-200/80'
               }`}
             >
               {/* MEMBER HEADER BAR */}
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-stone-100">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100">
                 <div className="flex items-center gap-3">
                   <Avatar size="md" className={`${member.avatarBg} text-white font-bold text-sm shadow-xs`}>
                     <AvatarFallback className={`${member.avatarBg} text-white font-bold`}>
@@ -400,7 +403,7 @@ export const FamilyMonitoring: React.FC<FamilyMonitoringProps> = ({
                       <h3 className="text-base sm:text-lg font-extrabold text-slate-900 tracking-tight">
                         {member.name}
                       </h3>
-                      <span className="text-xs px-2.5 py-0.5 rounded-full bg-stone-100 text-slate-700 font-bold">
+                      <span className="text-xs px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-700 font-bold">
                         {member.relation} · {member.age} thn
                       </span>
                       <Badge
@@ -422,7 +425,7 @@ export const FamilyMonitoring: React.FC<FamilyMonitoringProps> = ({
                     size="sm"
                     variant="outline"
                     onClick={() => handleSendReminder(member)}
-                    className="text-xs font-semibold px-3 py-1.5 rounded-full border-stone-200 hover:border-teal-700 hover:bg-teal-50/50 text-slate-700 cursor-pointer flex items-center gap-1.5"
+                    className="text-xs font-semibold px-3 py-1.5 rounded-full border-slate-200 hover:border-teal-700 hover:bg-teal-50/50 text-slate-700 cursor-pointer flex items-center gap-1.5"
                   >
                     <Bell className="w-3.5 h-3.5 text-amber-500" />
                     Kirim Pengingat
@@ -448,7 +451,7 @@ export const FamilyMonitoring: React.FC<FamilyMonitoringProps> = ({
               */}
               <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-stretch">
                 {/* ZONE 1: WIDE HORIZONTAL BOX (MUI LINECHART TREND) */}
-                <div className="lg:col-span-7 bg-stone-50/50 border border-stone-200/70 rounded-2xl p-4 flex flex-col justify-between space-y-3">
+                <div className="lg:col-span-7 bg-slate-50/70 border border-slate-200/80 rounded-2xl p-4 flex flex-col justify-between space-y-3">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                     <div>
                       <span className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
@@ -462,11 +465,11 @@ export const FamilyMonitoring: React.FC<FamilyMonitoringProps> = ({
 
                     {/* Interactive Legend & Baseline Indicator */}
                     <div className="flex flex-wrap items-center gap-2.5">
-                      <div className="flex items-center gap-1.5 bg-white px-2 py-0.5 rounded-full border border-stone-200 shadow-2xs">
+                      <div className="flex items-center gap-1.5 bg-white px-2 py-0.5 rounded-full border border-slate-200 shadow-2xs">
                         <span className={`w-2 h-2 rounded-full ${isWarning ? 'bg-amber-500' : 'bg-teal-700'}`} />
                         <span className="text-[10px] font-semibold text-slate-600">HR (BPM)</span>
                       </div>
-                      <div className="flex items-center gap-1.5 bg-white px-2 py-0.5 rounded-full border border-stone-200 shadow-2xs">
+                      <div className="flex items-center gap-1.5 bg-white px-2 py-0.5 rounded-full border border-slate-200 shadow-2xs">
                         <span className="w-2 h-2 rounded-full bg-indigo-500" />
                         <span className="text-[10px] font-semibold text-slate-600">HRV (ms)</span>
                       </div>
@@ -537,28 +540,36 @@ export const FamilyMonitoring: React.FC<FamilyMonitoringProps> = ({
 
                   {/* Activity Markers Pill Bar */}
                   {member.hourlyTrend.some((t) => t.activity) && (
-                    <div className="flex flex-wrap items-center gap-1.5 pt-1 border-t border-stone-200/60">
+                    <div className="flex flex-wrap items-center gap-1.5 pt-1 border-t border-slate-200/60">
                       <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mr-1">
                         Penanda Aktivitas:
                       </span>
                       {member.hourlyTrend
                         .filter((t) => t.activity)
-                        .map((t, idx) => (
+                        .map((t, idx) => {
+                          const MarkerIcon =
+                            t.activity?.type === 'obat'
+                              ? Pill
+                              : t.activity?.type === 'olahraga'
+                              ? Dumbbell
+                              : Coffee
+                          return (
                           <span
                             key={idx}
                             className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-amber-50 text-amber-900 border border-amber-200/80 shadow-2xs"
                           >
-                            <span>{t.activity?.type === 'obat' ? '💊' : t.activity?.type === 'olahraga' ? '🏃' : '☕'}</span>
+                            <MarkerIcon className="w-3 h-3" />
                             <span className="font-bold">{t.time}</span>
                             <span>·</span>
                             <span>{t.activity?.title}</span>
                           </span>
-                        ))}
+                          )
+                        })}
                     </div>
                   )}
 
                   {/* Context Health Note in Zone 1 */}
-                  <div className="pt-2 border-t border-stone-200/60 flex items-center justify-between text-[11px] text-slate-500">
+                  <div className="pt-2 border-t border-slate-200/60 flex items-center justify-between text-[11px] text-slate-500">
                     <span className="flex items-center gap-1.5 text-left">
                       <Sparkles className="w-3.5 h-3.5 text-amber-500 shrink-0" />
                       {member.healthNote}
@@ -571,7 +582,7 @@ export const FamilyMonitoring: React.FC<FamilyMonitoringProps> = ({
                 </div>
 
                 {/* ZONE 2: TALL VERTICAL BOX (PRIMARY METRIC: HEART RATE BPM) */}
-                <div className="lg:col-span-2 bg-gradient-to-b from-white to-stone-50/40 border border-stone-200/70 rounded-2xl p-4 flex flex-col items-center justify-between text-center space-y-2">
+                <div className="lg:col-span-2 bg-slate-50/70 border border-slate-200/80 rounded-2xl p-4 flex flex-col items-center justify-between text-center space-y-2">
                   <div className="w-full flex items-center justify-between">
                     <span className="text-xs font-bold text-slate-700">Detak Jantung</span>
                     <div className="w-7 h-7 rounded-full bg-rose-50 border border-rose-100 flex items-center justify-center">
@@ -590,7 +601,7 @@ export const FamilyMonitoring: React.FC<FamilyMonitoringProps> = ({
                   </div>
 
                   {/* Status Indicator */}
-                  <div className="w-full pt-2 border-t border-stone-100 flex flex-col items-center gap-1">
+                  <div className="w-full pt-2 border-t border-slate-100 flex flex-col items-center gap-1">
                     <Badge
                       variant={statusBadgeVariant}
                       className="font-bold text-xs w-full justify-center text-center py-0.5"
@@ -606,7 +617,7 @@ export const FamilyMonitoring: React.FC<FamilyMonitoringProps> = ({
                 {/* ZONE 3: TWO STACKED HORIZONTAL BOXES (HRV & RESPIRATION) */}
                 <div className="lg:col-span-3 flex flex-col gap-3 justify-between">
                   {/* Top Box: Variabilitas HRV */}
-                  <div className="flex-1 bg-white border border-stone-200/70 rounded-2xl p-3.5 flex flex-col justify-between">
+                  <div className="flex-1 bg-white border border-slate-200/80 rounded-2xl p-3.5 flex flex-col justify-between">
                     <div className="flex items-center justify-between">
                       <span className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
                         <Activity className="w-3.5 h-3.5 text-sky-600" />
@@ -630,13 +641,13 @@ export const FamilyMonitoring: React.FC<FamilyMonitoringProps> = ({
                       </Badge>
                     </div>
 
-                    <p className="text-[10px] text-slate-500 pt-1 border-t border-stone-100">
+                    <p className="text-[10px] text-slate-500 pt-1 border-t border-slate-100">
                       Keseimbangan saraf simpatik & otonom
                     </p>
                   </div>
 
                   {/* Bottom Box: Laju Pernapasan (RR) */}
-                  <div className="flex-1 bg-white border border-stone-200/70 rounded-2xl p-3.5 flex flex-col justify-between">
+                  <div className="flex-1 bg-white border border-slate-200/80 rounded-2xl p-3.5 flex flex-col justify-between">
                     <div className="flex items-center justify-between">
                       <span className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
                         <Wind className="w-3.5 h-3.5 text-teal-600" />
@@ -657,7 +668,7 @@ export const FamilyMonitoring: React.FC<FamilyMonitoringProps> = ({
                       </Badge>
                     </div>
 
-                    <p className="text-[10px] text-slate-500 pt-1 border-t border-stone-100">
+                    <p className="text-[10px] text-slate-500 pt-1 border-t border-slate-100">
                       Pola respirasi stabil dan teratur
                     </p>
                   </div>
@@ -668,7 +679,7 @@ export const FamilyMonitoring: React.FC<FamilyMonitoringProps> = ({
         })}
 
         {filteredMembers.length === 0 && (
-          <div className="p-12 text-center bg-stone-50 rounded-3xl border border-dashed border-stone-300 space-y-2">
+          <div className="p-12 text-center bg-slate-50 rounded-3xl border border-dashed border-slate-300 space-y-2">
             <p className="text-sm font-bold text-slate-700">Tidak ada anggota keluarga ditemukan</p>
             <p className="text-xs text-slate-500">Coba ubah kata kunci pencarian atau reset filter kategori.</p>
             <Button
@@ -688,7 +699,7 @@ export const FamilyMonitoring: React.FC<FamilyMonitoringProps> = ({
 
       {/* 3. SHADCN DIALOG: TAMBAH ANGGOTA KELUARGA BARU */}
       <Dialog open={isAddModalOpen} onOpenChange={setIsAddModalOpen}>
-        <DialogContent className="w-full max-w-md bg-white rounded-3xl p-6 shadow-2xl border border-stone-200 sm:max-w-md">
+        <DialogContent className="w-full max-w-md bg-white rounded-3xl p-6 shadow-2xl border border-slate-200 sm:max-w-md">
           <DialogHeader>
             <div className="flex items-center gap-2 mb-1">
               <span className="p-2 rounded-full bg-teal-100 text-teal-800">
@@ -714,7 +725,7 @@ export const FamilyMonitoring: React.FC<FamilyMonitoringProps> = ({
                   placeholder="Contoh: Farhan Pratama"
                   value={newMemberName}
                   onChange={(e) => setNewMemberName(e.target.value)}
-                  className="text-xs bg-stone-50/80 border-stone-200 rounded-xl px-3 py-2 text-slate-800 focus-visible:ring-teal-700/20"
+                  className="text-xs bg-slate-50/80 border-slate-200 rounded-xl px-3 py-2 text-slate-800 focus-visible:ring-teal-700/20"
                 />
               </div>
 
@@ -727,7 +738,7 @@ export const FamilyMonitoring: React.FC<FamilyMonitoringProps> = ({
                     id="memberRole"
                     value={newMemberRole}
                     onChange={(e) => setNewMemberRole(e.target.value)}
-                    className="w-full h-8 text-xs bg-stone-50/80 border border-stone-200 rounded-xl px-3 py-1.5 text-slate-800 focus:outline-none focus:ring-2 focus:ring-teal-700/20 focus:border-teal-700 transition"
+                    className="w-full h-8 text-xs bg-slate-50/80 border border-slate-200 rounded-xl px-3 py-1.5 text-slate-800 focus:outline-none focus:ring-2 focus:ring-teal-700/20 focus:border-teal-700 transition"
                   >
                     <option value="Kakek">Kakek</option>
                     <option value="Nenek">Nenek</option>
@@ -750,7 +761,7 @@ export const FamilyMonitoring: React.FC<FamilyMonitoringProps> = ({
                     placeholder="Contoh: 16"
                     value={newMemberAge}
                     onChange={(e) => setNewMemberAge(e.target.value)}
-                    className="text-xs bg-stone-50/80 border-stone-200 rounded-xl px-3 py-2 text-slate-800 focus-visible:ring-teal-700/20"
+                    className="text-xs bg-slate-50/80 border-slate-200 rounded-xl px-3 py-2 text-slate-800 focus-visible:ring-teal-700/20"
                   />
                 </div>
               </div>
@@ -763,7 +774,7 @@ export const FamilyMonitoring: React.FC<FamilyMonitoringProps> = ({
               </div>
             </div>
 
-            <DialogFooter className="flex items-center justify-end gap-2 pt-3 border-t border-stone-100">
+            <DialogFooter className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
               <Button
                 type="button"
                 variant="ghost"

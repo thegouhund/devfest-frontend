@@ -18,6 +18,24 @@ interface ChatContextType {
   unreadCount: number
   sendMessage: (text: string) => void
   addAiMessage: (text: string, openIfClosed?: boolean) => void
+  resetChat: () => void
+  conversations: Conversation[]
+  newConversation: () => void
+  loadConversation: (id: string) => void
+}
+
+export interface Conversation {
+  id: string
+  title: string
+  time: string
+  messages: ChatMessage[]
+}
+
+const greeting: ChatMessage = {
+  id: '1',
+  sender: 'ai',
+  text: 'Halo! 👋 Saya Sahabat Sehat AI, asisten pemantauan kebugaran dan vital sign keluarga Anda. Ada yang ingin Anda diskusikan seputar data rPPG atau gaya hidup hari ini?',
+  time: '08:31 WIB',
 }
 
 const ChatContext = createContext<ChatContextType | undefined>(undefined)
@@ -27,14 +45,37 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [unreadCount, setUnreadCount] = useState<number>(0)
   const [isAiTyping, setIsAiTyping] = useState<boolean>(false)
 
-  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([
-    {
-      id: '1',
-      sender: 'ai',
-      text: 'Halo! 👋 Saya Sahabat Sehat AI, asisten pemantauan kebugaran dan vital sign keluarga Anda. Ada yang ingin Anda diskusikan seputar data rPPG atau gaya hidup hari ini?',
-      time: '08:31 WIB',
-    },
-  ])
+  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([greeting])
+  const [conversations, setConversations] = useState<Conversation[]>([])
+
+  const resetChat = useCallback(() => {
+    setChatMessages([greeting])
+    setIsAiTyping(false)
+  }, [])
+
+  // Arsipkan sesi berjalan (kalau ada pertanyaan) lalu mulai sesi kosong
+  const newConversation = useCallback(() => {
+    setChatMessages((current) => {
+      const firstPrompt = current.find((m) => m.sender === 'user')
+      if (firstPrompt) {
+        setConversations((prev) => [
+          { id: Date.now().toString(), title: firstPrompt.text, time: firstPrompt.time, messages: current },
+          ...prev,
+        ])
+      }
+      return [greeting]
+    })
+    setIsAiTyping(false)
+  }, [])
+
+  const loadConversation = useCallback((id: string) => {
+    setConversations((prev) => {
+      const target = prev.find((c) => c.id === id)
+      if (target) setChatMessages(target.messages)
+      return prev
+    })
+    setIsAiTyping(false)
+  }, [])
 
   const openChat = useCallback(() => {
     setIsChatOpen(true)
@@ -144,6 +185,10 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
         unreadCount,
         sendMessage,
         addAiMessage,
+        resetChat,
+        conversations,
+        newConversation,
+        loadConversation,
       }}
     >
       {children}

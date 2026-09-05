@@ -43,15 +43,20 @@ import {
 import { useChat } from '../context/ChatContext'
 import FamilyMonitoring from './FamilyMonitoring'
 import { HistoryAndTrends } from './HistoryAndTrends'
+import RppgMeasure from './RppgMeasure'
+import ActivityLog from './ActivityLog'
+import Copilot from './Copilot'
 
-interface ActivityItem {
-  id: string
-  category: 'kopi' | 'olahraga' | 'tidur' | 'rokok' | 'makan' | 'alkohol'
-  title: string
-  detail: string
-  time: string
-  timestamp: number // for chart positioning
-}
+import {
+  activityCategories,
+  createActivity,
+  iconFor,
+  nowHHMM,
+  todayISO,
+  type ActivityCategory,
+  type ActivityItem,
+  type NewActivityInput,
+} from '@/lib/activities'
 
 export interface UserProfile {
   id: string
@@ -116,9 +121,7 @@ export const Dashboard: React.FC = () => {
   const [showActivityOverlay, setShowActivityOverlay] = useState(true)
   const [showHrvComparison, setShowHrvComparison] = useState(true)
   const [isLogModalOpen, setIsLogModalOpen] = useState(false)
-  const [selectedLogCategory, setSelectedLogCategory] = useState<
-    'kopi' | 'olahraga' | 'tidur' | 'rokok' | 'makan' | 'alkohol' | null
-  >(null)
+  const [selectedLogCategory, setSelectedLogCategory] = useState<ActivityCategory | null>(null)
   const [logDetail, setLogDetail] = useState('')
   const [isMeasureModalOpen, setIsMeasureModalOpen] = useState(false)
   const [targetMeasureMember, setTargetMeasureMember] = useState<{
@@ -135,6 +138,7 @@ export const Dashboard: React.FC = () => {
       category: 'olahraga',
       title: 'Peregangan Yoga',
       detail: 'Siti Rahma · Pasca sesi 25 menit peregangan',
+      date: todayISO(),
       time: '06:15 WIB',
       timestamp: 6.25,
     },
@@ -143,6 +147,7 @@ export const Dashboard: React.FC = () => {
       category: 'kopi',
       title: '1 Cangkir Espresso',
       detail: 'Budi Pratama · Kopi hitam tanpa gula sebelum kerja',
+      date: todayISO(),
       time: '08:30 WIB',
       timestamp: 8.5,
     },
@@ -151,6 +156,7 @@ export const Dashboard: React.FC = () => {
       category: 'olahraga',
       title: 'Aktivitas Bersepeda',
       detail: 'Dimas Pratama · Bersepeda keliling komplek',
+      date: todayISO(),
       time: '10:00 WIB',
       timestamp: 10.0,
     },
@@ -205,36 +211,28 @@ export const Dashboard: React.FC = () => {
     return `${fromStr} - ${toStr}`
   }, [dateRange])
 
-  const categories = [
-    { key: 'kopi', label: 'Kopi', icon: '☕' },
-    { key: 'olahraga', label: 'Olahraga', icon: '🏃' },
-    { key: 'tidur', label: 'Tidur', icon: '🌙' },
-    { key: 'makan', label: 'Makan', icon: '🍲' },
-    { key: 'rokok', label: 'Rokok', icon: '🚬' },
-    { key: 'alkohol', label: 'Alkohol', icon: '🍷' },
-  ] as const
+  const categories = activityCategories
 
-  const handleAddActivity = () => {
-    if (!selectedLogCategory) return
-    const now = new Date()
-    const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')} WIB`
-
-    const newAct: ActivityItem = {
-      id: Date.now().toString(),
-      category: selectedLogCategory,
-      title: categories.find((c) => c.key === selectedLogCategory)?.label || 'Aktivitas',
-      detail: logDetail.trim() || 'Dicatat via Quick Logger',
-      time: timeStr,
-      timestamp: now.getHours() + now.getMinutes() / 60,
-    }
+  const addActivity = (input: NewActivityInput) => {
+    const newAct = createActivity(input)
     setActivities([newAct, ...activities])
-    setIsLogModalOpen(false)
-    setSelectedLogCategory(null)
-    setLogDetail('')
     addAiMessage(
       `Aktivitas "${newAct.title}" (${newAct.detail}) berhasil dicatat dan dipetakan ke grafik tren vital harian Anda.`,
       true
     )
+  }
+
+  const handleAddActivity = () => {
+    if (!selectedLogCategory) return
+    addActivity({
+      category: selectedLogCategory,
+      detail: logDetail,
+      date: todayISO(),
+      time: nowHHMM(),
+    })
+    setIsLogModalOpen(false)
+    setSelectedLogCategory(null)
+    setLogDetail('')
   }
 
   const measuredPerson = targetMeasureMember || currentUser
@@ -264,6 +262,7 @@ export const Dashboard: React.FC = () => {
           <nav className="flex items-center gap-1 bg-slate-100/80 p-1.5 rounded-full border border-slate-200/60 overflow-x-auto max-w-full">
             {[
               { id: 'dashboard', label: 'Dashboard' },
+              { id: 'copilot', label: 'Copilot' },
               { id: 'rppg', label: 'Ukur rPPG' },
               { id: 'riwayat', label: 'Riwayat & Tren' },
               { id: 'aktivitas', label: 'Aktivitas' },
@@ -273,17 +272,7 @@ export const Dashboard: React.FC = () => {
                 key={tab.id}
                 size="sm"
                 variant={activeNav === tab.id ? 'default' : 'ghost'}
-                onClick={() => {
-                  if (tab.id === 'rppg') {
-                    setTargetMeasureMember(null)
-                    setIsMeasureModalOpen(true)
-                  } else if (tab.id === 'aktivitas') {
-                    setActiveNav('dashboard')
-                    setIsLogModalOpen(true)
-                  } else {
-                    setActiveNav(tab.id)
-                  }
-                }}
+                onClick={() => setActiveNav(tab.id)}
                 className={`px-4 py-1.5 rounded-full text-xs font-semibold transition cursor-pointer ${
                   activeNav === tab.id
                     ? 'bg-slate-900 text-white shadow-xs font-bold'
@@ -363,6 +352,16 @@ export const Dashboard: React.FC = () => {
                 setIsMeasureModalOpen(true)
               }}
               onBackToDashboard={() => setActiveNav('dashboard')}
+            />
+          ) : activeNav === 'copilot' ? (
+            <Copilot />
+          ) : activeNav === 'rppg' ? (
+            <RppgMeasure />
+          ) : activeNav === 'aktivitas' ? (
+            <ActivityLog
+              activities={activities}
+              onAdd={addActivity}
+              onDelete={(id) => setActivities(activities.filter((a) => a.id !== id))}
             />
           ) : activeNav === 'riwayat' ? (
             <HistoryAndTrends member={currentUser} />
@@ -540,8 +539,7 @@ export const Dashboard: React.FC = () => {
                   {/* Card 4: TOMBOL CTA MULAI UKUR rPPG (Sesuai Posisi & Ukuran Sketsa User) */}
                   <Card
                     onClick={() => {
-                      setTargetMeasureMember(null)
-                      setIsMeasureModalOpen(true)
+                      setActiveNav('rppg')
                     }}
                     role="button"
                     tabIndex={0}
@@ -859,12 +857,11 @@ export const Dashboard: React.FC = () => {
                                 const hourLabel = `${String(hour).padStart(2, '0')}:00`
                                 const exists = hourlyData.some((d) => d.label === hourLabel)
                                 if (!exists) return null
-                                const icon = act.category === 'kopi' ? '☕' : act.category === 'olahraga' ? '🏃' : '🍲'
                                 return (
                                   <ChartsReferenceLine
                                     key={act.id}
                                     x={hourLabel}
-                                    label={`${icon} ${act.title}`}
+                                    label={act.title}
                                     labelAlign="start"
                                     lineStyle={{
                                       stroke: '#0E7490',
@@ -888,17 +885,20 @@ export const Dashboard: React.FC = () => {
                     {showActivityOverlay && timeRange === 'harian' && activities.length > 0 && (
                       <div className="flex items-center gap-2 px-1 pt-1 pb-1 flex-wrap">
                         <span className="text-[11px] font-semibold text-slate-500">Penanda Aktivitas Hari Ini:</span>
-                        {activities.map((act) => (
-                          <span
-                            key={act.id}
-                            className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-teal-50/80 text-teal-800 border border-teal-200/60 shadow-2xs"
-                          >
-                            <span>{act.category === 'kopi' ? '☕' : act.category === 'olahraga' ? '🏃' : '🍲'}</span>
-                            <span className="font-semibold">{act.time}</span>
-                            <span className="text-slate-400">•</span>
-                            <span>{act.title} ({act.detail})</span>
-                          </span>
-                        ))}
+                        {activities.map((act) => {
+                          const CatIcon = iconFor(act.category)
+                          return (
+                            <span
+                              key={act.id}
+                              className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-teal-50/80 text-teal-800 border border-teal-200/60 shadow-2xs"
+                            >
+                              <CatIcon className="w-3 h-3" />
+                              <span className="font-semibold">{act.time}</span>
+                              <span className="text-slate-400">•</span>
+                              <span>{act.title} ({act.detail})</span>
+                            </span>
+                          )
+                        })}
                       </div>
                     )}
 
@@ -906,7 +906,9 @@ export const Dashboard: React.FC = () => {
                     <div className="pt-3 border-t border-slate-100 flex items-center justify-between flex-wrap gap-2">
                       <span className="text-xs font-bold text-slate-700">Catat Cepat:</span>
                       <div className="flex items-center gap-1.5 flex-wrap">
-                        {categories.map((cat) => (
+                        {categories
+                          .filter((cat) => cat.key !== 'lainnya')
+                          .map((cat) => (
                           <Button
                             key={cat.key}
                             size="sm"
@@ -917,7 +919,7 @@ export const Dashboard: React.FC = () => {
                             }}
                             className="px-2.5 py-1 rounded-full text-xs font-medium border-slate-200 hover:border-indigo-600 hover:bg-indigo-50/40 cursor-pointer"
                           >
-                            <span className="mr-1">{cat.icon}</span>
+                            <cat.icon className="w-3.5 h-3.5" />
                             {cat.label}
                           </Button>
                         ))}
@@ -977,6 +979,7 @@ export const Dashboard: React.FC = () => {
                           ) : (
                             activities.map((act) => {
                               const catInfo = categories.find((c) => c.key === act.category)
+                              const CatIcon = iconFor(act.category)
                               return (
                                 <TableRow key={act.id} className="border-slate-100 hover:bg-slate-50/60 transition-colors">
                                   <TableCell className="font-mono text-xs font-semibold text-slate-700">
@@ -984,8 +987,8 @@ export const Dashboard: React.FC = () => {
                                   </TableCell>
                                   <TableCell>
                                     <div className="flex items-center gap-2.5">
-                                      <span className="w-7 h-7 rounded-lg bg-slate-100 flex items-center justify-center text-xs shrink-0 shadow-2xs">
-                                        {catInfo?.icon || '📌'}
+                                      <span className="w-7 h-7 rounded-lg bg-slate-100 flex items-center justify-center shrink-0 shadow-2xs text-slate-600">
+                                        <CatIcon className="w-3.5 h-3.5" />
                                       </span>
                                       <span className="font-bold text-xs text-slate-900">{act.title}</span>
                                     </div>
@@ -1197,25 +1200,14 @@ export const Dashboard: React.FC = () => {
           )}
         </main>
 
-        {/* 3. PERSISTENT DISCLAIMER FOOTER */}
-        <footer className="pt-4 border-t border-slate-200/80 text-center text-xs text-slate-500 space-y-1">
-          <p className="text-slate-600 font-medium">
-            <strong>Pernyataan Non-Medis:</strong> Nadiku adalah platform pemantauan kebugaran dan
-            wellness berbasis rPPG & ML Anomaly Detection. Hasil pengukuran bersifat informasional dan
-            tidak menggantikan diagnosis, pemeriksaan medis klinis, atau konsultasi dokter.
-          </p>
-          <p className="text-slate-400">
-            Nadiku &copy; 2026 &middot; Didesain dengan prinsip ketenangan dan kepedulian keluarga.
-          </p>
-        </footer>
       </div>
 
       {/* QUICK LOG MODAL */}
       <Dialog open={isLogModalOpen} onOpenChange={setIsLogModalOpen}>
         <DialogContent className="w-full max-w-md bg-white rounded-3xl p-6 sm:p-8 border border-slate-200 shadow-xl space-y-5">
           <DialogHeader className="flex flex-row items-center gap-2 pb-3 border-b border-slate-100">
-            <span className="text-2xl">
-              {categories.find((c) => c.key === selectedLogCategory)?.icon}
+            <span className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center shrink-0 text-slate-700">
+              {selectedLogCategory && React.createElement(iconFor(selectedLogCategory), { className: 'w-5 h-5' })}
             </span>
             <div>
               <DialogTitle className="text-base font-bold text-slate-900 tracking-tight">
