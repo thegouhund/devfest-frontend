@@ -1,4 +1,17 @@
 import React, { useState } from 'react'
+import {
+  Alert,
+  Avatar,
+  Button,
+  ButtonGroup,
+  Card,
+  Chip,
+  Input,
+  Label,
+  Modal,
+  Switch,
+  TextField,
+} from '@heroui/react'
 
 interface ActivityItem {
   id: string
@@ -10,6 +23,7 @@ interface ActivityItem {
 }
 
 export const Dashboard: React.FC = () => {
+  const [activeNav, setActiveNav] = useState<string>('dashboard')
   const [timeRange, setTimeRange] = useState<'harian' | 'mingguan' | 'bulanan'>('harian')
   const [showActivityOverlay, setShowActivityOverlay] = useState<boolean>(true)
   const [hoveredPointIndex, setHoveredPointIndex] = useState<number | null>(null)
@@ -119,14 +133,16 @@ export const Dashboard: React.FC = () => {
 
   const handleAddActivity = () => {
     if (!selectedLogCategory) return
-    const cat = categories.find((c) => c.key === selectedLogCategory)
+    const now = new Date()
+    const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')} WIB`
+
     const newAct: ActivityItem = {
       id: Date.now().toString(),
       category: selectedLogCategory,
-      title: cat ? cat.label : 'Aktivitas',
-      detail: logDetail.trim() || 'Aktivitas dicatat secara manual',
-      time: 'Baru saja',
-      timestamp: 14.5,
+      title: categories.find((c) => c.key === selectedLogCategory)?.label || 'Aktivitas',
+      detail: logDetail.trim() || 'Dicatat via Quick Logger',
+      time: timeStr,
+      timestamp: now.getHours() + now.getMinutes() / 60,
     }
     setActivities([newAct, ...activities])
     setIsLogModalOpen(false)
@@ -166,59 +182,50 @@ export const Dashboard: React.FC = () => {
             </div>
           </div>
 
-          {/* Navigation Links (Desktop) */}
+          {/* Navigation Links with HeroUI Buttons */}
           <div className="hidden md:flex items-center gap-1 bg-stone-100/70 p-1 rounded-full border border-stone-200/70">
-            <button
-              type="button"
-              className="px-4 py-1.5 rounded-full text-xs font-bold bg-white text-slate-900 shadow-xs transition"
-            >
-              Dashboard
-            </button>
-            <button
-              type="button"
-              className="px-4 py-1.5 rounded-full text-xs font-medium text-slate-600 hover:text-slate-900 hover:bg-white/60 transition"
-            >
-              Pengukuran rPPG
-            </button>
-            <button
-              type="button"
-              className="px-4 py-1.5 rounded-full text-xs font-medium text-slate-600 hover:text-slate-900 hover:bg-white/60 transition"
-            >
-              Riwayat & Tren
-            </button>
-            <button
-              type="button"
-              className="px-4 py-1.5 rounded-full text-xs font-medium text-slate-600 hover:text-slate-900 hover:bg-white/60 transition"
-            >
-              Aktivitas
-            </button>
-            <button
-              type="button"
-              className="px-4 py-1.5 rounded-full text-xs font-medium text-slate-600 hover:text-slate-900 hover:bg-white/60 transition"
-            >
-              AI Sahabat
-            </button>
-            <button
-              type="button"
-              className="px-4 py-1.5 rounded-full text-xs font-medium text-slate-600 hover:text-slate-900 hover:bg-white/60 transition"
-            >
-              Keluarga
-            </button>
+            {[
+              { id: 'dashboard', label: 'Dashboard' },
+              { id: 'rppg', label: 'Pengukuran rPPG' },
+              { id: 'history', label: 'Riwayat & Tren' },
+              { id: 'activity', label: 'Aktivitas' },
+              { id: 'ai', label: 'AI Sahabat' },
+              { id: 'family', label: 'Keluarga' },
+            ].map((nav) => (
+              <Button
+                key={nav.id}
+                size="sm"
+                variant={activeNav === nav.id ? 'primary' : 'ghost'}
+                onPress={() => setActiveNav(nav.id)}
+                className={`px-3.5 py-1 rounded-full text-xs font-semibold transition ${
+                  activeNav === nav.id
+                    ? 'bg-white text-slate-900 shadow-xs font-bold'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                {nav.label}
+              </Button>
+            ))}
           </div>
 
-          {/* User Profile & Actions */}
+          {/* User Profile & Actions with HeroUI Avatar and Chip */}
           <div className="flex items-center gap-3">
             {/* Telegram Status indicator */}
-            <div className="hidden sm:flex items-center gap-1.5 px-3 py-1 bg-sky-50 text-sky-800 rounded-full border border-sky-200 text-xs font-semibold">
-              <span className="w-2 h-2 rounded-full bg-sky-500 animate-pulse" />
-              <span>Telegram Aktif</span>
-            </div>
+            <Chip
+              size="sm"
+              color="accent"
+              variant="soft"
+              className="hidden sm:inline-flex font-semibold text-xs items-center gap-1.5"
+            >
+              <span className="w-1.5 h-1.5 rounded-full bg-sky-500 animate-pulse inline-block mr-1" />
+              Telegram Aktif
+            </Chip>
 
-            {/* Profile Avatar Pill */}
+            {/* Profile Avatar Pill with HeroUI Avatar */}
             <div className="flex items-center gap-2 pl-2 border-l border-stone-200">
-              <div className="w-8 h-8 rounded-full bg-teal-900 text-white flex items-center justify-center font-bold text-xs shadow-xs">
-                BP
-              </div>
+              <Avatar size="sm" className="bg-teal-900 text-white font-bold text-xs shadow-xs">
+                <Avatar.Fallback>BP</Avatar.Fallback>
+              </Avatar>
               <div className="hidden sm:block text-left leading-tight">
                 <span className="text-xs font-bold text-slate-900 block">Budi Pratama</span>
                 <span className="text-xs text-slate-500 font-medium">Akun Utama</span>
@@ -230,34 +237,28 @@ export const Dashboard: React.FC = () => {
 
       {/* 2. MAIN CONTENT AREA */}
       <main className="max-w-6xl w-full mx-auto p-4 sm:p-8 space-y-8 flex-1">
-        {/* Header Greeting & Primary Action */}
-        <section className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white rounded-2xl sm:rounded-3xl p-6 sm:p-8 border border-stone-200/90 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.03)]">
+        {/* Header Greeting & Primary Action Card */}
+        <Card className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white rounded-2xl sm:rounded-3xl p-6 sm:p-8 border border-stone-200/90 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.03)]">
           <div className="space-y-1">
             <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight">
               Halo, Budi Pratama 👋
             </h1>
-            <p className="text-xs sm:text-sm text-slate-600 flex items-center gap-2 font-normal">
+            <div className="text-xs sm:text-sm text-slate-600 flex flex-wrap items-center gap-2 font-normal">
               <span>Pengukuran Terakhir: Hari ini, 08:30 WIB</span>
               <span className="inline-block w-1.5 h-1.5 rounded-full bg-stone-300" />
-              <span className="inline-flex items-center gap-1 text-emerald-700 font-semibold bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200 text-xs">
-                <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
-                  <path
-                    fillRule="evenodd"
-                    d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                    clipRule="evenodd"
-                  />
-                </svg>
+              <Chip size="sm" color="success" variant="soft" className="font-semibold text-xs">
                 Kualitas Sinyal Baik (98%)
-              </span>
-            </p>
+              </Chip>
+            </div>
           </div>
 
-          <button
-            type="button"
-            className="px-6 py-3.5 rounded-full bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold flex items-center justify-center gap-2.5 transition shadow-sm active:scale-95 cursor-pointer whitespace-nowrap self-start sm:self-auto"
+          <Button
+            size="md"
+            variant="primary"
+            className="px-6 py-2.5 rounded-full text-xs font-bold bg-slate-900 hover:bg-slate-800 text-white flex items-center gap-2 transition active:scale-95 shadow-xs"
           >
             <svg
-              className="w-4 h-4 text-emerald-400"
+              className="w-4 h-4"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -266,21 +267,30 @@ export const Dashboard: React.FC = () => {
               <path
                 strokeLinecap="round"
                 strokeLinejoin="round"
-                d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"
+                d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"
+              />
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"
               />
             </svg>
-            <span>Mulai Pengukuran rPPG</span>
-          </button>
-        </section>
+            <span>Mulai Pengukuran Baru</span>
+          </Button>
+        </Card>
 
-        {/* 3. THREE VITAL METRIC SUMMARY CARDS */}
+        {/* 3. VITAL SIGNS METRIC CARDS WITH HEROUI CARD & CHIP */}
         <section className="grid grid-cols-1 md:grid-cols-3 gap-5">
           {/* Metric 1: Heart Rate */}
-          <div className="bg-white rounded-2xl p-6 border border-stone-200/90 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.03)] space-y-4 relative overflow-hidden">
+          <Card className="bg-white rounded-2xl p-6 border border-stone-200/90 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.03)] space-y-4 relative overflow-hidden">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <span className="w-8 h-8 rounded-lg bg-red-50 text-red-600 flex items-center justify-center">
-                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                <span className="w-8 h-8 rounded-lg bg-rose-50 text-rose-600 flex items-center justify-center">
+                  <svg
+                    className="w-4 h-4"
+                    fill="currentColor"
+                    viewBox="0 0 20 20"
+                  >
                     <path
                       fillRule="evenodd"
                       d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z"
@@ -292,9 +302,9 @@ export const Dashboard: React.FC = () => {
                   Detak Jantung (HR)
                 </span>
               </div>
-              <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-[#D1FAE5] text-emerald-900 border border-emerald-300">
+              <Chip size="sm" color="success" variant="soft" className="font-bold text-xs">
                 Normal
-              </span>
+              </Chip>
             </div>
 
             <div className="flex items-baseline gap-2">
@@ -310,10 +320,10 @@ export const Dashboard: React.FC = () => {
                 <span>+3% (Stabil)</span>
               </span>
             </div>
-          </div>
+          </Card>
 
           {/* Metric 2: HRV (RMSSD) */}
-          <div className="bg-white rounded-2xl p-6 border border-stone-200/90 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.03)] space-y-4 relative overflow-hidden">
+          <Card className="bg-white rounded-2xl p-6 border border-stone-200/90 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.03)] space-y-4 relative overflow-hidden">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <span className="w-8 h-8 rounded-lg bg-teal-50 text-teal-700 flex items-center justify-center">
@@ -335,9 +345,9 @@ export const Dashboard: React.FC = () => {
                   Variabilitas (HRV)
                 </span>
               </div>
-              <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-[#D1FAE5] text-emerald-900 border border-emerald-300">
+              <Chip size="sm" color="success" variant="soft" className="font-bold text-xs">
                 Optimal
-              </span>
+              </Chip>
             </div>
 
             <div className="flex items-baseline gap-2">
@@ -351,10 +361,10 @@ export const Dashboard: React.FC = () => {
               <span className="text-slate-500 font-medium">Pemulihan Saraf: Baik</span>
               <span className="text-emerald-700 font-bold">Kondisi Prima</span>
             </div>
-          </div>
+          </Card>
 
           {/* Metric 3: Respiration Rate */}
-          <div className="bg-white rounded-2xl p-6 border border-stone-200/90 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.03)] space-y-4 relative overflow-hidden">
+          <Card className="bg-white rounded-2xl p-6 border border-stone-200/90 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.03)] space-y-4 relative overflow-hidden">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <span className="w-8 h-8 rounded-lg bg-sky-50 text-sky-700 flex items-center justify-center">
@@ -376,9 +386,9 @@ export const Dashboard: React.FC = () => {
                   Laju Pernapasan
                 </span>
               </div>
-              <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-[#D1FAE5] text-emerald-900 border border-emerald-300">
+              <Chip size="sm" color="success" variant="soft" className="font-bold text-xs">
                 Rileks
-              </span>
+              </Chip>
             </div>
 
             <div className="flex items-baseline gap-2">
@@ -392,11 +402,11 @@ export const Dashboard: React.FC = () => {
               <span className="text-slate-500 font-medium">Rentang Normal: 12-20 bpm</span>
               <span className="text-slate-700 font-bold">Teratur</span>
             </div>
-          </div>
+          </Card>
         </section>
 
-        {/* 4. INTERACTIVE TIME-SERIES TREND CHART WITH ACTIVITY OVERLAY */}
-        <section className="bg-white rounded-2xl sm:rounded-3xl p-6 sm:p-8 border border-stone-200/90 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.03)] space-y-6">
+        {/* 4. INTERACTIVE TIME-SERIES TREND CHART WITH ACTIVITY OVERLAY & HEROUI SWITCH */}
+        <Card className="bg-white rounded-2xl sm:rounded-3xl p-6 sm:p-8 border border-stone-200/90 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.03)] space-y-6">
           {/* Chart Header & Controls */}
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-stone-100">
             <div>
@@ -408,80 +418,77 @@ export const Dashboard: React.FC = () => {
               </p>
             </div>
 
-            <div className="flex flex-wrap items-center gap-3">
-              {/* Activity Marker Toggle Switch */}
-              <button
-                type="button"
-                onClick={() => setShowActivityOverlay(!showActivityOverlay)}
-                className={`px-3 py-1.5 rounded-full text-xs font-semibold flex items-center gap-2 border transition ${
-                  showActivityOverlay
-                    ? 'bg-teal-50 text-teal-900 border-teal-300'
-                    : 'bg-stone-50 text-slate-500 border-stone-200'
-                }`}
+            <div className="flex flex-wrap items-center gap-4">
+              {/* Activity Marker Toggle with HeroUI Switch */}
+              <Switch
+                isSelected={showActivityOverlay}
+                onChange={setShowActivityOverlay}
               >
-                <span
-                  className={`w-2 h-2 rounded-full ${
-                    showActivityOverlay ? 'bg-teal-700' : 'bg-stone-300'
-                  }`}
-                />
-                <span>Penanda Aktivitas</span>
-              </button>
+                <Switch.Control>
+                  <Switch.Thumb />
+                </Switch.Control>
+                <Switch.Content className="text-xs font-semibold text-slate-700">
+                  Penanda Aktivitas
+                </Switch.Content>
+              </Switch>
 
-              {/* Time Range Tabs */}
-              <div className="flex items-center gap-1 bg-stone-100 p-1 rounded-full text-xs font-semibold">
-                <button
-                  type="button"
-                  onClick={() => setTimeRange('harian')}
-                  className={`px-3.5 py-1 rounded-full transition ${
+              {/* Time Range Tabs with HeroUI ButtonGroup */}
+              <ButtonGroup variant="secondary" className="bg-stone-100 p-1 rounded-full text-xs">
+                <Button
+                  size="sm"
+                  variant={timeRange === 'harian' ? 'primary' : 'ghost'}
+                  onPress={() => setTimeRange('harian')}
+                  className={`px-3.5 py-1 rounded-full transition text-xs font-semibold ${
                     timeRange === 'harian'
                       ? 'bg-white text-slate-900 shadow-xs font-bold'
                       : 'text-slate-500 hover:text-slate-800'
                   }`}
                 >
                   Harian
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setTimeRange('mingguan')}
-                  className={`px-3.5 py-1 rounded-full transition ${
+                </Button>
+                <Button
+                  size="sm"
+                  variant={timeRange === 'mingguan' ? 'primary' : 'ghost'}
+                  onPress={() => setTimeRange('mingguan')}
+                  className={`px-3.5 py-1 rounded-full transition text-xs font-semibold ${
                     timeRange === 'mingguan'
                       ? 'bg-white text-slate-900 shadow-xs font-bold'
                       : 'text-slate-500 hover:text-slate-800'
                   }`}
                 >
                   Mingguan
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setTimeRange('bulanan')}
-                  className={`px-3.5 py-1 rounded-full transition ${
+                </Button>
+                <Button
+                  size="sm"
+                  variant={timeRange === 'bulanan' ? 'primary' : 'ghost'}
+                  onPress={() => setTimeRange('bulanan')}
+                  className={`px-3.5 py-1 rounded-full transition text-xs font-semibold ${
                     timeRange === 'bulanan'
                       ? 'bg-white text-slate-900 shadow-xs font-bold'
                       : 'text-slate-500 hover:text-slate-800'
                   }`}
                 >
                   Bulanan
-                </button>
-              </div>
+                </Button>
+              </ButtonGroup>
             </div>
           </div>
 
-          {/* SVG Line / Area Graph */}
-          <div className="relative w-full overflow-x-auto">
+          {/* SVG Canvas */}
+          <div className="w-full overflow-x-auto">
             <svg
               viewBox={`0 0 ${svgWidth} ${svgHeight}`}
-              className="w-full h-56 sm:h-64 overflow-visible select-none"
+              className="w-full min-w-[650px] h-[260px] overflow-visible select-none"
             >
               <defs>
-                {/* Area Gradient */}
                 <linearGradient id="tealAreaGrad" x1="0" y1="0" x2="0" y2="1">
                   <stop offset="0%" stopColor="#0E7490" stopOpacity="0.18" />
                   <stop offset="100%" stopColor="#0E7490" stopOpacity="0.0" />
                 </linearGradient>
               </defs>
 
-              {/* Grid Lines */}
-              {[60, 70, 80, 90].map((hrVal) => {
+              {/* Grid Horizontal Lines */}
+              {[50, 65, 80, 95].map((hrVal) => {
                 const y = getY(hrVal)
                 return (
                   <g key={hrVal}>
@@ -604,33 +611,33 @@ export const Dashboard: React.FC = () => {
                 )
               })}
 
-              {/* Activity Markers Overlaid along Timeline */}
+              {/* Activity Overlay Markers */}
               {showActivityOverlay &&
                 timeRange === 'harian' &&
                 activities.map((act) => {
-                  // Map timestamp to horizontal X on chart (from 06:00 to 14:00)
-                  const normalizedX = Math.max(0, Math.min(1, (act.timestamp - 6) / 8))
-                  const actX = padLeft + normalizedX * plotWidth
-                  const actY = getY(72) - 45
+                  const dataIndex = hourlyData.findIndex(
+                    (d) => Number(d.time.split(':')[0]) === Math.floor(act.timestamp)
+                  )
+                  if (dataIndex === -1) return null
+                  const actX = getX(dataIndex)
+                  const actY = getY(hourlyData[dataIndex].hr) - 26
 
                   return (
                     <g key={act.id} className="cursor-pointer group">
-                      {/* Vertical dotted pointer line to curve */}
                       <line
                         x1={actX}
-                        y1={actY + 14}
+                        y1={actY + 12}
                         x2={actX}
-                        y2={getY(72)}
-                        stroke="#94A3B8"
+                        y2={getY(hourlyData[dataIndex].hr)}
+                        stroke="#0E7490"
                         strokeWidth="1.2"
                         strokeDasharray="2 2"
                       />
-                      {/* Activity icon bubble */}
                       <circle
                         cx={actX}
                         cy={actY}
                         r="12"
-                        className="fill-white stroke-stone-300 stroke-1.5 shadow-sm group-hover:scale-110 transition-transform"
+                        className="fill-white stroke-stone-300 stroke-1.5 shadow-xs group-hover:scale-110 transition-transform"
                       />
                       <text
                         x={actX}
@@ -651,12 +658,12 @@ export const Dashboard: React.FC = () => {
                 })}
             </svg>
           </div>
-        </section>
+        </Card>
 
         {/* 5. LOWER SPLIT: QUICK ACTIVITY LOGGER (LEFT) & ANOMALY / AI INSIGHT (RIGHT) */}
         <section className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-          {/* Left Column: Quick Activity Logging (7 cols) */}
-          <div className="lg:col-span-7 bg-white rounded-2xl sm:rounded-3xl p-6 sm:p-8 border border-stone-200/90 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.03)] space-y-6">
+          {/* Left Column: Quick Activity Logging with HeroUI Card */}
+          <Card className="lg:col-span-7 bg-white rounded-2xl sm:rounded-3xl p-6 sm:p-8 border border-stone-200/90 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.03)] space-y-6">
             <div className="flex items-center justify-between">
               <div>
                 <h2 className="text-lg font-bold text-slate-900 tracking-tight">
@@ -667,22 +674,22 @@ export const Dashboard: React.FC = () => {
                 </p>
               </div>
 
-              <span className="text-xs font-semibold text-teal-800 bg-teal-50 px-2.5 py-1 rounded-full border border-teal-200">
+              <Chip size="sm" color="accent" variant="soft" className="font-bold text-xs">
                 {activities.length} Hari Ini
-              </span>
+              </Chip>
             </div>
 
-            {/* Quick 6 Category Buttons */}
+            {/* Quick 6 Category Buttons with HeroUI Button */}
             <div className="grid grid-cols-3 sm:grid-cols-6 gap-2.5">
               {categories.map((cat) => (
-                <button
+                <Button
                   key={cat.key}
-                  type="button"
-                  onClick={() => {
+                  variant="outline"
+                  onPress={() => {
                     setSelectedLogCategory(cat.key)
                     setIsLogModalOpen(true)
                   }}
-                  className="p-3 rounded-2xl border border-stone-200 hover:border-teal-400 hover:bg-teal-50/40 text-center transition flex flex-col items-center gap-1.5 active:scale-95 group cursor-pointer"
+                  className="p-3 h-auto rounded-2xl border border-stone-200 hover:border-teal-700 hover:bg-teal-50/40 text-center transition flex flex-col items-center gap-1.5 active:scale-95 group cursor-pointer"
                 >
                   <span className="text-xl group-hover:scale-110 transition-transform">
                     {cat.icon}
@@ -690,7 +697,7 @@ export const Dashboard: React.FC = () => {
                   <span className="text-xs font-bold text-slate-700 group-hover:text-teal-900">
                     {cat.label}
                   </span>
-                </button>
+                </Button>
               ))}
             </div>
 
@@ -732,47 +739,42 @@ export const Dashboard: React.FC = () => {
                 ))}
               </div>
             </div>
-          </div>
+          </Card>
 
           {/* Right Column: Anomaly Alert & AI Health Companion Insight (5 cols) */}
           <div className="lg:col-span-5 space-y-5">
-            {/* Anomaly Detection Status Card */}
-            <div className="bg-white rounded-2xl sm:rounded-3xl p-6 border border-stone-200/90 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.03)] space-y-4">
+            {/* Anomaly Detection Status Card with HeroUI Alert */}
+            <Card className="bg-white rounded-2xl sm:rounded-3xl p-6 border border-stone-200/90 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.03)] space-y-4">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-bold text-slate-700 uppercase tracking-wider">
                   Deteksi Anomali
                 </span>
-                <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-100 text-amber-900 border border-amber-300">
+                <Chip size="sm" color="warning" variant="soft" className="font-bold text-xs">
                   Perlu Perhatian (Sedang)
-                </span>
+                </Chip>
               </div>
 
-              {/* Mild Anomaly Banner */}
-              <div className="p-4 rounded-2xl bg-amber-50/70 border border-amber-200 space-y-2">
-                <div className="flex items-start gap-2.5">
-                  <span className="w-5 h-5 rounded-full bg-amber-500 text-white flex items-center justify-center text-xs font-bold shrink-0 mt-0.5">
-                    !
-                  </span>
-                  <div>
-                    <h4 className="text-xs font-bold text-amber-950">
-                      Peningkatan HR Sementara Terdeteksi
-                    </h4>
-                    <p className="text-xs text-amber-900/90 mt-0.5 leading-relaxed">
-                      Detak jantung naik ke <strong>84 BPM</strong> (+15 BPM di atas baseline) pada
-                      pukul 10:00 WIB.
-                    </p>
-                  </div>
-                </div>
-
-                <div className="pl-7 pt-1 text-xs text-slate-600 border-t border-amber-200/60 mt-2">
-                  <span className="font-semibold text-slate-700">Konteks Terkait:</span> 45 menit
-                  setelah Anda mencatat 1 cangkir kopi hitam.
-                </div>
-              </div>
-            </div>
+              {/* Anomaly Alert */}
+              <Alert status="warning" className="rounded-2xl border border-amber-200 bg-amber-50/70">
+                <Alert.Indicator />
+                <Alert.Content>
+                  <Alert.Title className="text-xs font-bold text-amber-950">
+                    Peningkatan HR Sementara Terdeteksi
+                  </Alert.Title>
+                  <Alert.Description className="text-xs text-amber-900/90 mt-0.5 leading-relaxed">
+                    Detak jantung naik ke <strong>84 BPM</strong> (+15 BPM di atas baseline) pada
+                    pukul 10:00 WIB.
+                    <div className="pt-2 text-xs text-slate-600 border-t border-amber-200/60 mt-2 font-normal">
+                      <span className="font-semibold text-slate-700">Konteks Terkait:</span> 45 menit
+                      setelah Anda mencatat 1 cangkir kopi hitam.
+                    </div>
+                  </Alert.Description>
+                </Alert.Content>
+              </Alert>
+            </Card>
 
             {/* AI Health Companion Insight Widget */}
-            <div className="bg-gradient-to-br from-teal-900 to-slate-900 text-white rounded-2xl sm:rounded-3xl p-6 shadow-md space-y-4 relative overflow-hidden">
+            <Card className="bg-gradient-to-br from-teal-900 to-slate-900 text-white rounded-2xl sm:rounded-3xl p-6 shadow-md space-y-4 relative overflow-hidden border border-teal-950">
               <div className="flex items-center gap-3">
                 <div className="w-9 h-9 rounded-xl bg-teal-500/20 text-teal-300 border border-teal-400/30 flex items-center justify-center font-bold text-sm">
                   AI
@@ -793,9 +795,10 @@ export const Dashboard: React.FC = () => {
                 pemulihan yang baik.&rdquo;
               </p>
 
-              <button
-                type="button"
-                className="w-full py-2.5 rounded-xl bg-teal-400 hover:bg-teal-300 text-teal-950 text-xs font-bold flex items-center justify-center gap-2 transition active:scale-98 shadow-sm cursor-pointer"
+              <Button
+                variant="primary"
+                size="md"
+                className="w-full py-2.5 rounded-xl bg-teal-400 hover:bg-teal-300 text-teal-950 text-xs font-bold flex items-center justify-center gap-2 transition active:scale-98 shadow-xs cursor-pointer"
               >
                 <span>Tanya AI tentang Tren Hari Ini</span>
                 <svg
@@ -807,8 +810,8 @@ export const Dashboard: React.FC = () => {
                 >
                   <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
                 </svg>
-              </button>
-            </div>
+              </Button>
+            </Card>
           </div>
         </section>
       </main>
@@ -825,66 +828,66 @@ export const Dashboard: React.FC = () => {
         </p>
       </footer>
 
-      {/* QUICK LOG MODAL */}
-      {isLogModalOpen && selectedLogCategory && (
-        <div className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl p-6 sm:p-8 max-w-md w-full border border-stone-200 shadow-xl space-y-5 animate-in fade-in zoom-in-95 duration-150">
-            <div className="flex items-center justify-between pb-3 border-b border-stone-100">
-              <div className="flex items-center gap-2">
+      {/* QUICK LOG MODAL WITH HEROUI MODAL */}
+      <Modal isOpen={isLogModalOpen} onOpenChange={setIsLogModalOpen}>
+        <Modal.Backdrop className="bg-slate-900/50 backdrop-blur-xs fixed inset-0 z-50 flex items-center justify-center p-4">
+          <Modal.Container className="w-full max-w-md">
+            <Modal.Dialog className="bg-white rounded-3xl p-6 sm:p-8 w-full border border-stone-200 shadow-xl space-y-5">
+              <Modal.CloseTrigger />
+              <Modal.Header className="flex items-center gap-2 pb-3 border-b border-stone-100">
                 <span className="text-2xl">
                   {categories.find((c) => c.key === selectedLogCategory)?.icon}
                 </span>
-                <h3 className="text-base font-bold text-slate-900">
-                  Catat {categories.find((c) => c.key === selectedLogCategory)?.label}
-                </h3>
-              </div>
-              <button
-                type="button"
-                onClick={() => setIsLogModalOpen(false)}
-                className="w-7 h-7 rounded-full text-slate-400 hover:text-slate-700 hover:bg-stone-100 flex items-center justify-center transition"
-              >
-                ✕
-              </button>
-            </div>
+                <div>
+                  <Modal.Heading className="text-base font-bold text-slate-900 tracking-tight">
+                    Catat {categories.find((c) => c.key === selectedLogCategory)?.label}
+                  </Modal.Heading>
+                  <p className="text-xs text-slate-500">Tambahkan detail catatan waktu & aktivitas</p>
+                </div>
+              </Modal.Header>
 
-            <div className="space-y-4">
-              <div>
-                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-                  Catatan / Keterangan
-                </label>
-                <input
-                  type="text"
-                  placeholder="misal: 1 cangkir espresso / jalan pagi 30 menit"
-                  value={logDetail}
-                  onChange={(e) => setLogDetail(e.target.value)}
-                  className="w-full px-4 py-2.5 rounded-xl border border-stone-200 bg-stone-50/50 text-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-teal-700/20 focus:border-teal-700"
-                />
-              </div>
+              <Modal.Body className="space-y-4">
+                <TextField className="w-full">
+                  <Label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                    Catatan / Keterangan
+                  </Label>
+                  <Input
+                    placeholder="misal: 1 cangkir espresso / jalan pagi 30 menit"
+                    value={logDetail}
+                    onChange={(e) => setLogDetail(e.target.value)}
+                    className="w-full"
+                  />
+                </TextField>
 
-              <div className="flex items-center justify-between text-xs text-slate-500 pt-1">
-                <span>Waktu Catat: Sekarang ({new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })} WIB)</span>
-              </div>
-            </div>
+                <div className="flex items-center justify-between text-xs text-slate-500 pt-1">
+                  <span>
+                    Waktu Catat: Sekarang ({new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })} WIB)
+                  </span>
+                </div>
+              </Modal.Body>
 
-            <div className="flex items-center justify-end gap-3 pt-3 border-t border-stone-100">
-              <button
-                type="button"
-                onClick={() => setIsLogModalOpen(false)}
-                className="px-5 py-2 rounded-full text-xs font-semibold text-slate-600 hover:bg-stone-100 transition"
-              >
-                Batal
-              </button>
-              <button
-                type="button"
-                onClick={handleAddActivity}
-                className="px-6 py-2 rounded-full text-xs font-bold bg-slate-900 hover:bg-slate-800 text-white transition shadow-sm"
-              >
-                Simpan Aktivitas
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+              <Modal.Footer className="flex items-center justify-end gap-3 pt-3 border-t border-stone-100">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onPress={() => setIsLogModalOpen(false)}
+                  className="px-5 py-2 rounded-full text-xs font-semibold text-slate-600 hover:bg-stone-100"
+                >
+                  Batal
+                </Button>
+                <Button
+                  variant="primary"
+                  size="sm"
+                  onPress={handleAddActivity}
+                  className="px-6 py-2 rounded-full text-xs font-bold bg-slate-900 hover:bg-slate-800 text-white shadow-xs"
+                >
+                  Simpan Aktivitas
+                </Button>
+              </Modal.Footer>
+            </Modal.Dialog>
+          </Modal.Container>
+        </Modal.Backdrop>
+      </Modal>
     </div>
   )
 }

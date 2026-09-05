@@ -1,4 +1,14 @@
 import React, { useState } from 'react'
+import {
+  Button,
+  Card,
+  Checkbox,
+  Chip,
+  FieldError,
+  Input,
+  Label,
+  TextField,
+} from '@heroui/react'
 
 export interface OnboardingData {
   // Step 1: Signup
@@ -131,7 +141,7 @@ export const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
       {/* Top Header & Brand */}
       <header className="max-w-3xl w-full mx-auto flex items-center justify-between pb-6 pt-2">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-teal-800 text-white flex items-center justify-center font-bold text-lg shadow-sm">
+          <div className="w-10 h-10 rounded-xl bg-teal-800 text-white flex items-center justify-center font-bold text-lg shadow-xs">
             <svg
               className="w-5 h-5 text-white"
               fill="none"
@@ -154,15 +164,15 @@ export const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
           </div>
         </div>
 
-        <div className="text-xs text-slate-700 font-semibold bg-white/90 shadow-xs px-3.5 py-1.5 rounded-full border border-stone-200">
+        <Chip size="sm" variant="soft" color="accent" className="font-semibold text-xs">
           Langkah {currentStep} dari {steps.length}
-        </div>
+        </Chip>
       </header>
 
       {/* Main Form Container Card */}
       <main className="max-w-3xl w-full mx-auto my-auto">
-        <div className="bg-white rounded-2xl sm:rounded-3xl border border-stone-200/90 shadow-[0_10px_30px_-10px_rgba(0,0,0,0.06)] p-6 sm:p-12 relative overflow-hidden transition-all duration-300">
-          {/* Stepper Progress Bar (Perfect mathematical center alignment) */}
+        <Card className="bg-white rounded-2xl sm:rounded-3xl border border-stone-200/90 shadow-[0_10px_30px_-10px_rgba(0,0,0,0.06)] p-6 sm:p-12 relative overflow-hidden transition-all duration-300">
+          {/* Stepper Progress Bar (Centered mathematical alignment) */}
           <div className="mb-10 pb-8 border-b border-stone-100">
             <div className="relative">
               {/* Background connecting line from center of col 1 (12.5%) to center of col 4 (87.5%) */}
@@ -192,9 +202,9 @@ export const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
                       <div
                         className={`w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold transition-all duration-200 ${
                           isPassed
-                            ? 'bg-teal-700 text-white shadow-sm'
+                            ? 'bg-teal-700 text-white shadow-xs'
                             : isActive
-                              ? 'bg-white border-2 border-teal-700 text-teal-800 ring-4 ring-teal-50 shadow-sm'
+                              ? 'bg-white border-2 border-teal-700 text-teal-800 ring-4 ring-teal-50 shadow-xs'
                               : 'bg-white border-2 border-stone-300 text-stone-400'
                         }`}
                       >
@@ -261,13 +271,14 @@ export const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
                 aman.
               </p>
               <div className="pt-6">
-                <button
-                  type="button"
-                  onClick={() => window.location.reload()}
-                  className="px-8 py-3 bg-slate-900 hover:bg-slate-800 text-white text-sm font-medium rounded-full transition shadow-sm"
+                <Button
+                  variant="primary"
+                  size="md"
+                  className="px-8 py-3 bg-slate-900 hover:bg-slate-800 text-white text-sm font-semibold rounded-full transition shadow-xs"
+                  onPress={() => onComplete ? onComplete(formData) : window.location.reload()}
                 >
                   Buka Dashboard Sekarang
-                </button>
+                </Button>
               </div>
             </div>
           ) : (
@@ -286,56 +297,51 @@ export const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
                   </div>
 
                   <div className="space-y-4 pt-2">
-                    <div>
-                      <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                    <TextField isInvalid={Boolean(errors.fullName)} className="w-full">
+                      <Label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
                         Nama Lengkap
-                      </label>
-                      <input
-                        type="text"
+                      </Label>
+                      <Input
                         placeholder="misal: Budi Pratama"
                         value={formData.fullName}
                         onChange={(e) =>
                           setFormData({ ...formData, fullName: e.target.value })
                         }
-                        className={`w-full px-4 py-2.5 rounded-xl border bg-stone-50/50 text-slate-900 text-sm focus:outline-none focus:bg-white focus:ring-2 focus:ring-teal-700/20 focus:border-teal-700 transition ${
-                          errors.fullName ? 'border-red-400' : 'border-stone-200'
-                        }`}
+                        className="w-full"
                       />
                       {errors.fullName && (
-                        <p className="text-xs text-red-500 mt-1">
+                        <FieldError className="text-xs text-red-500 mt-1 font-medium">
                           {errors.fullName}
-                        </p>
+                        </FieldError>
                       )}
-                    </div>
+                    </TextField>
 
-                    <div>
-                      <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                    <TextField isInvalid={Boolean(errors.email)} className="w-full">
+                      <Label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
                         Alamat Email
-                      </label>
-                      <input
+                      </Label>
+                      <Input
                         type="email"
                         placeholder="nama@email.com"
                         value={formData.email}
                         onChange={(e) =>
                           setFormData({ ...formData, email: e.target.value })
                         }
-                        className={`w-full px-4 py-2.5 rounded-xl border bg-stone-50/50 text-slate-900 text-sm focus:outline-none focus:bg-white focus:ring-2 focus:ring-teal-700/20 focus:border-teal-700 transition ${
-                          errors.email ? 'border-red-400' : 'border-stone-200'
-                        }`}
+                        className="w-full"
                       />
                       {errors.email && (
-                        <p className="text-xs text-red-500 mt-1">
+                        <FieldError className="text-xs text-red-500 mt-1 font-medium">
                           {errors.email}
-                        </p>
+                        </FieldError>
                       )}
-                    </div>
+                    </TextField>
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      <div>
-                        <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                      <TextField isInvalid={Boolean(errors.password)} className="w-full">
+                        <Label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
                           Kata Sandi
-                        </label>
-                        <input
+                        </Label>
+                        <Input
                           type="password"
                           placeholder="Minimal 6 karakter"
                           value={formData.password}
@@ -345,24 +351,20 @@ export const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
                               password: e.target.value,
                             })
                           }
-                          className={`w-full px-4 py-2.5 rounded-xl border bg-stone-50/50 text-slate-900 text-sm focus:outline-none focus:bg-white focus:ring-2 focus:ring-teal-700/20 focus:border-teal-700 transition ${
-                            errors.password
-                              ? 'border-red-400'
-                              : 'border-stone-200'
-                          }`}
+                          className="w-full"
                         />
                         {errors.password && (
-                          <p className="text-xs text-red-500 mt-1">
+                          <FieldError className="text-xs text-red-500 mt-1 font-medium">
                             {errors.password}
-                          </p>
+                          </FieldError>
                         )}
-                      </div>
+                      </TextField>
 
-                      <div>
-                        <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                      <TextField isInvalid={Boolean(errors.confirmPassword)} className="w-full">
+                        <Label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
                           Konfirmasi Sandi
-                        </label>
-                        <input
+                        </Label>
+                        <Input
                           type="password"
                           placeholder="Ulangi kata sandi"
                           value={formData.confirmPassword}
@@ -372,18 +374,14 @@ export const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
                               confirmPassword: e.target.value,
                             })
                           }
-                          className={`w-full px-4 py-2.5 rounded-xl border bg-stone-50/50 text-slate-900 text-sm focus:outline-none focus:bg-white focus:ring-2 focus:ring-teal-700/20 focus:border-teal-700 transition ${
-                            errors.confirmPassword
-                              ? 'border-red-400'
-                              : 'border-stone-200'
-                          }`}
+                          className="w-full"
                         />
                         {errors.confirmPassword && (
-                          <p className="text-xs text-red-500 mt-1">
+                          <FieldError className="text-xs text-red-500 mt-1 font-medium">
                             {errors.confirmPassword}
-                          </p>
+                          </FieldError>
                         )}
-                      </div>
+                      </TextField>
                     </div>
                   </div>
 
@@ -391,7 +389,7 @@ export const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
                     Sudah memiliki akun terdaftar?{' '}
                     <button
                       type="button"
-                      className="text-teal-800 font-bold hover:underline"
+                      className="text-teal-800 font-bold hover:underline cursor-pointer"
                     >
                       Masuk ke akun Anda
                     </button>
@@ -414,11 +412,11 @@ export const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
 
                   <div className="space-y-5 pt-2">
                     {/* Tanggal Lahir */}
-                    <div>
-                      <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                    <TextField isInvalid={Boolean(errors.birthDate)} className="w-full">
+                      <Label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
                         Tanggal Lahir
-                      </label>
-                      <input
+                      </Label>
+                      <Input
                         type="date"
                         value={formData.birthDate}
                         onChange={(e) =>
@@ -427,54 +425,48 @@ export const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
                             birthDate: e.target.value,
                           })
                         }
-                        className={`w-full px-4 py-2.5 rounded-xl border bg-stone-50/50 text-slate-900 text-sm focus:outline-none focus:bg-white focus:ring-2 focus:ring-teal-700/20 focus:border-teal-700 transition ${
-                          errors.birthDate
-                            ? 'border-red-400'
-                            : 'border-stone-200'
-                        }`}
+                        className="w-full"
                       />
                       {errors.birthDate && (
-                        <p className="text-xs text-red-500 mt-1">
+                        <FieldError className="text-xs text-red-500 mt-1 font-medium">
                           {errors.birthDate}
-                        </p>
+                        </FieldError>
                       )}
-                    </div>
+                    </TextField>
 
-                    {/* Gender Pill Selection */}
+                    {/* Gender Pill Selection using HeroUI Buttons */}
                     <div>
-                      <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
+                      <Label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
                         Jenis Kelamin
-                      </label>
+                      </Label>
                       <div className="flex gap-3">
-                        <button
-                          type="button"
-                          onClick={() =>
-                            setFormData({ ...formData, gender: 'male' })
-                          }
-                          className={`px-5 py-2.5 rounded-xl text-sm font-semibold border transition-all duration-200 ${
+                        <Button
+                          variant={formData.gender === 'male' ? 'primary' : 'outline'}
+                          size="md"
+                          onPress={() => setFormData({ ...formData, gender: 'male' })}
+                          className={`rounded-xl text-sm font-semibold transition ${
                             formData.gender === 'male'
-                              ? 'bg-[#D1FAE5] text-emerald-950 border-emerald-400 shadow-xs'
-                              : 'bg-white text-slate-700 border-stone-300 hover:border-stone-400 hover:bg-stone-50'
+                              ? 'bg-teal-800 text-white'
+                              : 'text-slate-700 border-stone-300'
                           }`}
                         >
                           Pria
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() =>
-                            setFormData({ ...formData, gender: 'female' })
-                          }
-                          className={`px-5 py-2.5 rounded-xl text-sm font-semibold border transition-all duration-200 ${
+                        </Button>
+                        <Button
+                          variant={formData.gender === 'female' ? 'primary' : 'outline'}
+                          size="md"
+                          onPress={() => setFormData({ ...formData, gender: 'female' })}
+                          className={`rounded-xl text-sm font-semibold transition ${
                             formData.gender === 'female'
-                              ? 'bg-[#D1FAE5] text-emerald-950 border-emerald-400 shadow-xs'
-                              : 'bg-white text-slate-700 border-stone-300 hover:border-stone-400 hover:bg-stone-50'
+                              ? 'bg-teal-800 text-white'
+                              : 'text-slate-700 border-stone-300'
                           }`}
                         >
                           Wanita
-                        </button>
+                        </Button>
                       </div>
                       {errors.gender && (
-                        <p className="text-xs text-red-500 mt-1">
+                        <p className="text-xs text-red-500 mt-1 font-medium">
                           {errors.gender}
                         </p>
                       )}
@@ -482,69 +474,51 @@ export const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
 
                     {/* Tinggi & Berat Badan */}
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      <div>
-                        <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-                          Tinggi Badan
-                        </label>
-                        <div className="relative">
-                          <input
-                            type="number"
-                            placeholder="170"
-                            value={formData.height}
-                            onChange={(e) =>
-                              setFormData({
-                                ...formData,
-                                height: e.target.value,
-                              })
-                            }
-                            className={`w-full px-4 py-2.5 pr-12 rounded-xl border bg-stone-50/50 text-slate-900 text-sm focus:outline-none focus:bg-white focus:ring-2 focus:ring-teal-700/20 focus:border-teal-700 transition ${
-                              errors.height
-                                ? 'border-red-400'
-                                : 'border-stone-200'
-                            }`}
-                          />
-                          <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-500 pointer-events-none">
-                            cm
-                          </span>
-                        </div>
+                      <TextField isInvalid={Boolean(errors.height)} className="w-full">
+                        <Label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                          Tinggi Badan (cm)
+                        </Label>
+                        <Input
+                          type="number"
+                          placeholder="170"
+                          value={formData.height}
+                          onChange={(e) =>
+                            setFormData({
+                              ...formData,
+                              height: e.target.value,
+                            })
+                          }
+                          className="w-full"
+                        />
                         {errors.height && (
-                          <p className="text-xs text-red-500 mt-1">
+                          <FieldError className="text-xs text-red-500 mt-1 font-medium">
                             {errors.height}
-                          </p>
+                          </FieldError>
                         )}
-                      </div>
+                      </TextField>
 
-                      <div>
-                        <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-                          Berat Badan
-                        </label>
-                        <div className="relative">
-                          <input
-                            type="number"
-                            placeholder="65"
-                            value={formData.weight}
-                            onChange={(e) =>
-                              setFormData({
-                                ...formData,
-                                weight: e.target.value,
-                              })
-                            }
-                            className={`w-full px-4 py-2.5 pr-12 rounded-xl border bg-stone-50/50 text-slate-900 text-sm focus:outline-none focus:bg-white focus:ring-2 focus:ring-teal-700/20 focus:border-teal-700 transition ${
-                              errors.weight
-                                ? 'border-red-400'
-                                : 'border-stone-200'
-                            }`}
-                          />
-                          <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-500 pointer-events-none">
-                            kg
-                          </span>
-                        </div>
+                      <TextField isInvalid={Boolean(errors.weight)} className="w-full">
+                        <Label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                          Berat Badan (kg)
+                        </Label>
+                        <Input
+                          type="number"
+                          placeholder="65"
+                          value={formData.weight}
+                          onChange={(e) =>
+                            setFormData({
+                              ...formData,
+                              weight: e.target.value,
+                            })
+                          }
+                          className="w-full"
+                        />
                         {errors.weight && (
-                          <p className="text-xs text-red-500 mt-1">
+                          <FieldError className="text-xs text-red-500 mt-1 font-medium">
                             {errors.weight}
-                          </p>
+                          </FieldError>
                         )}
-                      </div>
+                      </TextField>
                     </div>
                   </div>
                 </div>
@@ -571,7 +545,7 @@ export const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
                       }
                       className={`p-4 sm:p-5 rounded-2xl border cursor-pointer transition-all ${
                         formData.familyMode === 'create'
-                          ? 'border-teal-600 bg-teal-50/40 ring-2 ring-teal-600/10'
+                          ? 'border-teal-700 bg-teal-50/40 ring-2 ring-teal-700/10'
                           : 'border-stone-200 hover:border-stone-300 bg-white'
                       }`}
                     >
@@ -583,7 +557,7 @@ export const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
                           onChange={() =>
                             setFormData({ ...formData, familyMode: 'create' })
                           }
-                          className="mt-1 text-teal-700 focus:ring-teal-600 h-4 w-4"
+                          className="mt-1 text-teal-700 focus:ring-teal-700 h-4 w-4"
                         />
                         <div className="flex-1">
                           <h3 className="text-sm font-bold text-slate-900">
@@ -596,30 +570,27 @@ export const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
 
                           {formData.familyMode === 'create' && (
                             <div className="mt-3.5 pt-3 border-t border-teal-100">
-                              <label className="block text-xs font-bold text-slate-700 mb-1">
-                                Nama Keluarga
-                              </label>
-                              <input
-                                type="text"
-                                placeholder="misal: Keluarga Pratama"
-                                value={formData.familyName}
-                                onChange={(e) =>
-                                  setFormData({
-                                    ...formData,
-                                    familyName: e.target.value,
-                                  })
-                                }
-                                className={`w-full px-3.5 py-2 rounded-xl border text-sm text-slate-900 bg-white focus:outline-none focus:ring-2 focus:ring-teal-700/20 focus:border-teal-700 ${
-                                  errors.familyName
-                                    ? 'border-red-400'
-                                    : 'border-stone-300'
-                                }`}
-                              />
-                              {errors.familyName && (
-                                <p className="text-xs text-red-500 mt-1 font-medium">
-                                  {errors.familyName}
-                                </p>
-                              )}
+                              <TextField isInvalid={Boolean(errors.familyName)} className="w-full">
+                                <Label className="block text-xs font-bold text-slate-700 mb-1">
+                                  Nama Keluarga
+                                </Label>
+                                <Input
+                                  placeholder="misal: Keluarga Pratama"
+                                  value={formData.familyName}
+                                  onChange={(e) =>
+                                    setFormData({
+                                      ...formData,
+                                      familyName: e.target.value,
+                                    })
+                                  }
+                                  className="w-full bg-white"
+                                />
+                                {errors.familyName && (
+                                  <FieldError className="text-xs text-red-500 mt-1 font-medium">
+                                    {errors.familyName}
+                                  </FieldError>
+                                )}
+                              </TextField>
                             </div>
                           )}
                         </div>
@@ -633,7 +604,7 @@ export const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
                       }
                       className={`p-4 sm:p-5 rounded-2xl border cursor-pointer transition-all ${
                         formData.familyMode === 'join'
-                          ? 'border-teal-600 bg-teal-50/40 ring-2 ring-teal-600/10'
+                          ? 'border-teal-700 bg-teal-50/40 ring-2 ring-teal-700/10'
                           : 'border-stone-200 hover:border-stone-300 bg-white'
                       }`}
                     >
@@ -645,7 +616,7 @@ export const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
                           onChange={() =>
                             setFormData({ ...formData, familyMode: 'join' })
                           }
-                          className="mt-1 text-teal-700 focus:ring-teal-600 h-4 w-4"
+                          className="mt-1 text-teal-700 focus:ring-teal-700 h-4 w-4"
                         />
                         <div className="flex-1">
                           <h3 className="text-sm font-bold text-slate-900">
@@ -658,31 +629,28 @@ export const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
 
                           {formData.familyMode === 'join' && (
                             <div className="mt-3.5 pt-3 border-t border-teal-100">
-                              <label className="block text-xs font-bold text-slate-700 mb-1">
-                                Kode Undangan (6 Karakter)
-                              </label>
-                              <input
-                                type="text"
-                                placeholder="misal: FAM789"
-                                maxLength={8}
-                                value={formData.inviteCode}
-                                onChange={(e) =>
-                                  setFormData({
-                                    ...formData,
-                                    inviteCode: e.target.value.toUpperCase(),
-                                  })
-                                }
-                                className={`w-full px-3.5 py-2 rounded-xl border text-sm text-slate-900 font-mono tracking-wider bg-white focus:outline-none focus:ring-2 focus:ring-teal-700/20 focus:border-teal-700 ${
-                                  errors.inviteCode
-                                    ? 'border-red-400'
-                                    : 'border-stone-300'
-                                }`}
-                              />
-                              {errors.inviteCode && (
-                                <p className="text-xs text-red-500 mt-1 font-medium">
-                                  {errors.inviteCode}
-                                </p>
-                              )}
+                              <TextField isInvalid={Boolean(errors.inviteCode)} className="w-full">
+                                <Label className="block text-xs font-bold text-slate-700 mb-1">
+                                  Kode Undangan (6 Karakter)
+                                </Label>
+                                <Input
+                                  placeholder="misal: FAM789"
+                                  maxLength={8}
+                                  value={formData.inviteCode}
+                                  onChange={(e) =>
+                                    setFormData({
+                                      ...formData,
+                                      inviteCode: e.target.value.toUpperCase(),
+                                    })
+                                  }
+                                  className="w-full bg-white font-mono tracking-wider"
+                                />
+                                {errors.inviteCode && (
+                                  <FieldError className="text-xs text-red-500 mt-1 font-medium">
+                                    {errors.inviteCode}
+                                  </FieldError>
+                                )}
+                              </TextField>
                             </div>
                           )}
                         </div>
@@ -696,7 +664,7 @@ export const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
                       }
                       className={`p-4 sm:p-5 rounded-2xl border cursor-pointer transition-all ${
                         formData.familyMode === 'standalone'
-                          ? 'border-teal-600 bg-teal-50/40 ring-2 ring-teal-600/10'
+                          ? 'border-teal-700 bg-teal-50/40 ring-2 ring-teal-700/10'
                           : 'border-stone-200 hover:border-stone-300 bg-white'
                       }`}
                     >
@@ -711,7 +679,7 @@ export const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
                               familyMode: 'standalone',
                             })
                           }
-                          className="mt-1 text-teal-700 focus:ring-teal-600 h-4 w-4"
+                          className="mt-1 text-teal-700 focus:ring-teal-700 h-4 w-4"
                         />
                         <div>
                           <h3 className="text-sm font-bold text-slate-900">
@@ -796,48 +764,48 @@ export const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
                       </div>
                     </div>
 
-                    {/* Consent Checkboxes */}
+                    {/* Consent Checkboxes using HeroUI Checkbox */}
                     <div className="space-y-3 pt-2">
-                      <label className="flex items-start gap-3 cursor-pointer select-none">
-                        <input
-                          type="checkbox"
-                          checked={formData.consentTerms}
-                          onChange={(e) =>
-                            setFormData({
-                              ...formData,
-                              consentTerms: e.target.checked,
-                            })
-                          }
-                          className="mt-1 h-4 w-4 text-teal-700 rounded border-stone-300 focus:ring-teal-600"
-                        />
-                        <span className="text-xs text-slate-800 font-medium leading-normal">
+                      <Checkbox
+                        isSelected={formData.consentTerms}
+                        onChange={(checked) =>
+                          setFormData({
+                            ...formData,
+                            consentTerms: checked,
+                          })
+                        }
+                      >
+                        <Checkbox.Control>
+                          <Checkbox.Indicator />
+                        </Checkbox.Control>
+                        <Checkbox.Content className="text-xs text-slate-800 font-medium leading-normal">
                           Saya memahami bahwa platform ini bersifat informasional
                           dan bukan pengganti penanganan medis klinis.
-                        </span>
-                      </label>
+                        </Checkbox.Content>
+                      </Checkbox>
                       {errors.consentTerms && (
                         <p className="text-xs text-red-500 pl-7 font-medium">
                           {errors.consentTerms}
                         </p>
                       )}
 
-                      <label className="flex items-start gap-3 cursor-pointer select-none">
-                        <input
-                          type="checkbox"
-                          checked={formData.consentCamera}
-                          onChange={(e) =>
-                            setFormData({
-                              ...formData,
-                              consentCamera: e.target.checked,
-                            })
-                          }
-                          className="mt-1 h-4 w-4 text-teal-700 rounded border-stone-300 focus:ring-teal-600"
-                        />
-                        <span className="text-xs text-slate-800 font-medium leading-normal">
+                      <Checkbox
+                        isSelected={formData.consentCamera}
+                        onChange={(checked) =>
+                          setFormData({
+                            ...formData,
+                            consentCamera: checked,
+                          })
+                        }
+                      >
+                        <Checkbox.Control>
+                          <Checkbox.Indicator />
+                        </Checkbox.Control>
+                        <Checkbox.Content className="text-xs text-slate-800 font-medium leading-normal">
                           Saya mengizinkan akses kamera browser saat sesi
                           pengukuran vital sign rPPG berlangsung.
-                        </span>
-                      </label>
+                        </Checkbox.Content>
+                      </Checkbox>
                       {errors.consentCamera && (
                         <p className="text-xs text-red-500 pl-7 font-medium">
                           {errors.consentCamera}
@@ -848,12 +816,13 @@ export const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
                 </div>
               )}
 
-              {/* Bottom Action Buttons (Matching Reference Image) */}
+              {/* Bottom Action Buttons with HeroUI Button */}
               <div className="mt-10 pt-6 border-t border-stone-100 flex items-center justify-between gap-4">
-                <button
-                  type="button"
-                  onClick={handleBack}
-                  disabled={currentStep === 1}
+                <Button
+                  variant="outline"
+                  size="md"
+                  onPress={handleBack}
+                  isDisabled={currentStep === 1}
                   className={`px-6 py-2.5 rounded-full text-xs font-bold tracking-wide border transition-all duration-200 ${
                     currentStep === 1
                       ? 'opacity-0 pointer-events-none'
@@ -861,12 +830,13 @@ export const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
                   }`}
                 >
                   Kembali
-                </button>
+                </Button>
 
-                <button
-                  type="button"
-                  onClick={handleNext}
-                  className="px-7 py-2.5 rounded-full text-xs font-bold tracking-wide bg-slate-900 hover:bg-slate-800 text-white flex items-center gap-2 transition-all duration-200 active:scale-95 shadow-sm cursor-pointer"
+                <Button
+                  variant="primary"
+                  size="md"
+                  onPress={handleNext}
+                  className="px-7 py-2.5 rounded-full text-xs font-bold tracking-wide bg-slate-900 hover:bg-slate-800 text-white flex items-center gap-2 transition-all duration-200 active:scale-95 shadow-xs cursor-pointer"
                 >
                   <span>{currentStep === 4 ? 'Selesai & Mulai' : 'Lanjutkan'}</span>
                   <svg
@@ -882,15 +852,15 @@ export const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
                       d="M9 5l7 7-7 7"
                     />
                   </svg>
-                </button>
+                </Button>
               </div>
             </div>
           )}
-        </div>
+        </Card>
       </main>
 
       {/* Persistent Disclaimer Footer */}
-      <footer className="max-w-3xl w-full mx-auto text-center pt-6 pb-2 text-[11px] font-medium text-slate-500">
+      <footer className="max-w-3xl w-full mx-auto text-center pt-6 pb-2 text-xs font-medium text-slate-500">
         Nadiku &copy; 2026 &middot; Platform wellness non-diagnostik berbasis
         rPPG & ML Anomaly Detection.
       </footer>

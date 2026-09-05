@@ -11,42 +11,47 @@ function App() {
   const [count, setCount] = useState(0)
   const [activeView, setActiveView] = useState<'dashboard' | 'onboarding' | 'demo'>('dashboard')
 
-  // Top navigation switch helper
+  // Top navigation switch helper using HeroUI ButtonGroup
   const switcher = (
-    <div className="fixed top-3 right-4 z-50 flex items-center gap-1.5 p-1 bg-white/85 backdrop-blur-md rounded-full border border-stone-200 shadow-sm text-xs">
-      <button
-        type="button"
-        onClick={() => setActiveView('dashboard')}
-        className={`px-3 py-1 rounded-full font-semibold transition ${
-          activeView === 'dashboard'
-            ? 'bg-slate-900 text-white shadow-xs'
-            : 'text-slate-600 hover:text-slate-900'
-        }`}
-      >
-        Dashboard
-      </button>
-      <button
-        type="button"
-        onClick={() => setActiveView('onboarding')}
-        className={`px-3 py-1 rounded-full font-semibold transition ${
-          activeView === 'onboarding'
-            ? 'bg-slate-900 text-white shadow-xs'
-            : 'text-slate-600 hover:text-slate-900'
-        }`}
-      >
-        Onboarding
-      </button>
-      <button
-        type="button"
-        onClick={() => setActiveView('demo')}
-        className={`px-2.5 py-1 rounded-full font-semibold transition ${
-          activeView === 'demo'
-            ? 'bg-slate-900 text-white shadow-xs'
-            : 'text-slate-500 hover:text-slate-800'
-        }`}
-      >
-        Vite Demo
-      </button>
+    <div className="fixed top-3 right-4 z-50 p-1 bg-white/85 backdrop-blur-md rounded-full border border-stone-200 shadow-sm">
+      <ButtonGroup variant="secondary" className="gap-1">
+        <Button
+          size="sm"
+          variant={activeView === 'dashboard' ? 'primary' : 'ghost'}
+          onPress={() => setActiveView('dashboard')}
+          className={`px-3 py-1 rounded-full text-xs font-semibold transition ${
+            activeView === 'dashboard'
+              ? 'bg-slate-900 text-white shadow-xs'
+              : 'text-slate-600 hover:text-slate-900'
+          }`}
+        >
+          Dashboard
+        </Button>
+        <Button
+          size="sm"
+          variant={activeView === 'onboarding' ? 'primary' : 'ghost'}
+          onPress={() => setActiveView('onboarding')}
+          className={`px-3 py-1 rounded-full text-xs font-semibold transition ${
+            activeView === 'onboarding'
+              ? 'bg-slate-900 text-white shadow-xs'
+              : 'text-slate-600 hover:text-slate-900'
+          }`}
+        >
+          Onboarding
+        </Button>
+        <Button
+          size="sm"
+          variant={activeView === 'demo' ? 'primary' : 'ghost'}
+          onPress={() => setActiveView('demo')}
+          className={`px-2.5 py-1 rounded-full text-xs font-semibold transition ${
+            activeView === 'demo'
+              ? 'bg-slate-900 text-white shadow-xs'
+              : 'text-slate-500 hover:text-slate-800'
+          }`}
+        >
+          Vite Demo
+        </Button>
+      </ButtonGroup>
     </div>
   )
 
