@@ -1,16 +1,19 @@
-import React, { useState, useRef, useEffect } from 'react'
+import React, { useState } from 'react'
 import {
   Avatar,
   Button,
   ButtonGroup,
   Card,
   Chip,
+  Dropdown,
   Input,
   Label,
   Modal,
   Switch,
   TextField,
 } from '@heroui/react'
+import vitalMonitoringIllustration from '../assets/illustrations/vital-monitoring.svg'
+import { useChat } from '../context/ChatContext'
 
 interface ActivityItem {
   id: string
@@ -21,14 +24,78 @@ interface ActivityItem {
   timestamp: number // for chart positioning
 }
 
-interface ChatMessage {
+export interface FamilyMember {
   id: string
-  sender: 'ai' | 'user'
-  text: string
-  time: string
+  name: string
+  role: string
+  initials: string
+  age: number
+  avatarBg: string
+  hr: number
+  hrv: number
+  rr: number
+  status: string
+  signalQuality: number
 }
 
+const familyMembers: FamilyMember[] = [
+  {
+    id: 'budi',
+    name: 'Budi Pratama',
+    role: 'Kepala Keluarga',
+    initials: 'BP',
+    age: 42,
+    avatarBg: 'bg-teal-900',
+    hr: 72,
+    hrv: 52,
+    rr: 16,
+    status: 'Normal',
+    signalQuality: 98,
+  },
+  {
+    id: 'siti',
+    name: 'Siti Rahma',
+    role: 'Ibu',
+    initials: 'SR',
+    age: 39,
+    avatarBg: 'bg-rose-800',
+    hr: 75,
+    hrv: 48,
+    rr: 17,
+    status: 'Optimal',
+    signalQuality: 95,
+  },
+  {
+    id: 'dimas',
+    name: 'Dimas Pratama',
+    role: 'Anak',
+    initials: 'DP',
+    age: 12,
+    avatarBg: 'bg-indigo-800',
+    hr: 82,
+    hrv: 64,
+    rr: 19,
+    status: 'Aktif',
+    signalQuality: 92,
+  },
+  {
+    id: 'nenek',
+    name: 'Hj. Aminah',
+    role: 'Nenek',
+    initials: 'HA',
+    age: 68,
+    avatarBg: 'bg-amber-800',
+    hr: 68,
+    hrv: 38,
+    rr: 15,
+    status: 'Perlu Perhatian',
+    signalQuality: 94,
+  },
+]
+
 export const Dashboard: React.FC = () => {
+  const [selectedMember, setSelectedMember] = useState<FamilyMember>(familyMembers[0])
+
   const [activeNav, setActiveNav] = useState<string>('dashboard')
   const [timeRange, setTimeRange] = useState<'harian' | 'mingguan' | 'bulanan'>('harian')
   const [showActivityOverlay, setShowActivityOverlay] = useState<boolean>(true)
@@ -39,34 +106,18 @@ export const Dashboard: React.FC = () => {
   const [selectedLogCategory, setSelectedLogCategory] = useState<ActivityItem['category'] | null>(null)
   const [logDetail, setLogDetail] = useState<string>('')
 
-  // Chatbot State
-  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([
-    {
-      id: '1',
-      sender: 'ai',
-      text: 'Halo Budi! 👋 Data vital rPPG Anda pagi ini menunjukkan 72 BPM & HRV 52 ms (stabil). Ada yang ingin Anda tanyakan seputar kondisi tubuh hari ini?',
-      time: '08:31 WIB',
-    },
-    {
-      id: '2',
-      sender: 'user',
-      text: 'Kenapa jam 10 tadi detak jantungku sempat naik ke 84 BPM?',
-      time: '10:15 WIB',
-    },
-    {
-      id: '3',
-      sender: 'ai',
-      text: 'Itu respon normal terhadap kafein dari 1 cangkir kopi hitam yang Anda catat pada 09:15 WIB. Setelah 1 jam, denyut Anda sudah berangsur kembali ke baseline normal 72 BPM. Pastikan cukup minum air putih ya! 💧',
-      time: '10:16 WIB',
-    },
-  ])
-  const [inputMessage, setInputMessage] = useState<string>('')
-  const [isAiTyping, setIsAiTyping] = useState<boolean>(false)
-  const chatBottomRef = useRef<HTMLDivElement>(null)
+  // rPPG Measurement Modal State
+  const [isMeasureModalOpen, setIsMeasureModalOpen] = useState<boolean>(false)
 
-  useEffect(() => {
-    chatBottomRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }, [chatMessages, isAiTyping])
+  // Global Chat Context
+  const { addAiMessage } = useChat()
+
+  const handleSelectMember = (member: FamilyMember) => {
+    setSelectedMember(member)
+    addAiMessage(
+      `Menampilkan profil kesehatan ${member.name} (${member.role}). Detak jantung ${member.hr} BPM & HRV ${member.hrv} ms (${member.status.toLowerCase()}).`
+    )
+  }
 
   // Activity list
   const [activities, setActivities] = useState<ActivityItem[]>([
@@ -130,10 +181,10 @@ export const Dashboard: React.FC = () => {
     timeRange === 'harian' ? hourlyData : timeRange === 'mingguan' ? weeklyData : monthlyData
 
   // SVG Chart Geometry
-  const svgWidth = 720
+  const svgWidth = 960
   const svgHeight = 220
   const padLeft = 40
-  const padRight = 25
+  const padRight = 30
   const padTop = 24
   const padBottom = 34
   const plotWidth = svgWidth - padLeft - padRight
@@ -182,52 +233,10 @@ export const Dashboard: React.FC = () => {
     setLogDetail('')
   }
 
-  const handleSendMessage = (textToSend?: string) => {
-    const text = (textToSend || inputMessage).trim()
-    if (!text) return
-
-    const now = new Date()
-    const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')} WIB`
-
-    const userMsg: ChatMessage = {
-      id: Date.now().toString(),
-      sender: 'user',
-      text,
-      time: timeStr,
-    }
-
-    setChatMessages((prev) => [...prev, userMsg])
-    if (!textToSend) setInputMessage('')
-    setIsAiTyping(true)
-
-    // Simulated intelligent response
-    setTimeout(() => {
-      let reply = 'Terima kasih atas pertanyaannya. Berdasarkan data vital rPPG terkini, parameter Anda berada dalam zona pemulihan yang sehat. Tetap jaga hidrasi dan istirahat teratur.'
-
-      const lower = text.toLowerCase()
-      if (lower.includes('baseline') || lower.includes('normal')) {
-        reply = 'Baseline denyut jantung istirahat Anda adalah 69 BPM dengan rentang sehat 60-80 BPM. Nilai 72 BPM saat ini menunjukkan kondisi kardiovaskular yang stabil.'
-      } else if (lower.includes('napas') || lower.includes('pernapasan') || lower.includes('relaksasi')) {
-        reply = 'Laju napas Anda adalah 16 bpm (rileks). Jika merasa tegang, cobalah teknik 4-7-8: tarik napas 4 detik, tahan 7 detik, lalu hembuskan perlahan 8 detik.'
-      } else if (lower.includes('kopi') || lower.includes('kafein')) {
-        reply = 'Kafein merangsang saraf simpatis selama 1-2 jam pertama. Lonjakan kecil ke 84 BPM adalah wajar dan HRV Anda tetap menunjukkan pemulihan saraf otonom yang kuat.'
-      }
-
-      const aiMsg: ChatMessage = {
-        id: (Date.now() + 1).toString(),
-        sender: 'ai',
-        text: reply,
-        time: `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')} WIB`,
-      }
-      setChatMessages((prev) => [...prev, aiMsg])
-      setIsAiTyping(false)
-    }, 700)
-  }
-
   return (
-    <div className="min-h-screen bg-[#F0EEE6] text-slate-900 flex flex-col items-center justify-start p-3 sm:p-6 lg:p-8 font-sans antialiased">
-      {/* MAIN CONTAINER (Matching Tablet-like Frame from Reference) */}
-      <div className="w-full max-w-7xl bg-white/95 backdrop-blur-md rounded-[2.5rem] border border-stone-200/80 shadow-[0_20px_50px_-15px_rgba(0,0,0,0.05)] p-5 sm:p-7 md:p-9 space-y-7">
+    <div className="min-h-screen bg-[#F0EEE6] text-slate-900 flex flex-col items-center justify-start p-2 sm:p-4 lg:p-5 font-sans antialiased">
+      {/* MAIN CONTAINER - Widescreen Expansion */}
+      <div className="w-full max-w-[98vw] 2xl:max-w-[1920px] mx-auto bg-white/95 backdrop-blur-md rounded-[2rem] sm:rounded-[2.5rem] border border-stone-200/80 shadow-[0_20px_50px_-15px_rgba(0,0,0,0.05)] p-4 sm:p-7 md:p-8 space-y-7">
         {/* 1. TOP NAVIGATION BAR (Exact reference aesthetic) */}
         <header className="flex flex-col md:flex-row items-center justify-between gap-4 pb-4 border-b border-stone-100">
           {/* Brand Logo with cross/heart symbol */}
@@ -282,64 +291,191 @@ export const Dashboard: React.FC = () => {
             ))}
           </nav>
 
-          {/* Right Utilities (Search, Notification, Avatar) */}
-          <div className="flex items-center gap-3 self-end md:self-auto">
-            {/* Quick search input */}
-            <div className="hidden lg:flex items-center gap-2 px-3 py-1.5 bg-stone-100/80 border border-stone-200/70 rounded-full text-xs text-slate-500">
-              <svg className="w-3.5 h-3.5 text-stone-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-              </svg>
-              <span>Cari data vital...</span>
-            </div>
+          {/* Family Member Profile Selector using HeroUI Dropdown */}
+          <div className="flex items-center self-end md:self-auto">
+            <Dropdown>
+              <Dropdown.Trigger
+                aria-label="Pilih profil anggota keluarga"
+                className="flex items-center gap-2.5 p-1 rounded-xl hover:bg-stone-100/70 transition cursor-pointer outline-hidden group"
+              >
+                <Avatar size="sm" className={`${selectedMember.avatarBg} text-white font-bold text-xs shadow-xs`}>
+                  <Avatar.Fallback>{selectedMember.initials}</Avatar.Fallback>
+                </Avatar>
+                <div className="text-left hidden sm:flex flex-col">
+                  <div className="flex items-center gap-1.5 whitespace-nowrap">
+                    <span className="text-xs font-bold text-slate-800 leading-tight whitespace-nowrap">
+                      {selectedMember.name}
+                    </span>
+                    <span className="text-xs font-semibold text-teal-700 leading-none whitespace-nowrap">
+                      ({selectedMember.role})
+                    </span>
+                  </div>
+                  <span className="text-xs text-slate-500 font-medium leading-tight whitespace-nowrap">
+                    {selectedMember.age} thn · {selectedMember.status}
+                  </span>
+                </div>
+                <svg
+                  className="w-3.5 h-3.5 text-slate-400 group-hover:text-slate-600 ml-0.5 transition-colors"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                  strokeWidth="2"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                </svg>
+              </Dropdown.Trigger>
 
-            {/* Notification Bell with Badge */}
-            <button
-              type="button"
-              className="w-9 h-9 rounded-full bg-stone-100 hover:bg-stone-200/80 flex items-center justify-center text-slate-700 relative transition cursor-pointer"
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
-              </svg>
-              <span className="w-2 h-2 rounded-full bg-rose-500 absolute top-2 right-2 border-2 border-white" />
-            </button>
+              <Dropdown.Popover
+                placement="bottom end"
+                className="w-80 p-2 bg-white border border-stone-200/90 rounded-2xl shadow-xl z-50 animate-in fade-in zoom-in-95 duration-150"
+              >
+                <div className="px-2.5 py-2 mb-1 border-b border-stone-100">
+                  <p className="text-xs font-bold text-slate-800">Profil Keluarga</p>
+                  <p className="text-xs text-slate-400">Ganti pemantauan data vital</p>
+                </div>
 
-            {/* User Profile Avatar */}
-            <div className="flex items-center gap-2 pl-1 border-l border-stone-200">
-              <Avatar size="sm" className="bg-teal-900 text-white font-bold text-xs shadow-xs">
-                <Avatar.Fallback>BP</Avatar.Fallback>
-              </Avatar>
-            </div>
+                <Dropdown.Menu
+                  aria-label="Daftar Anggota Keluarga"
+                  onAction={(key) => {
+                    const found = familyMembers.find((m) => m.id === String(key))
+                    if (found) {
+                      handleSelectMember(found)
+                    }
+                  }}
+                  className="space-y-1 outline-hidden"
+                >
+                  {familyMembers.map((member) => (
+                    <Dropdown.Item
+                      key={member.id}
+                      id={member.id}
+                      textValue={`${member.name} (${member.role})`}
+                      className={`flex items-center justify-between p-2 rounded-xl cursor-pointer transition outline-hidden ${
+                        selectedMember.id === member.id
+                          ? 'bg-teal-50 text-teal-950 font-semibold'
+                          : 'hover:bg-stone-100/80 text-slate-700'
+                      }`}
+                    >
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        <Avatar size="sm" className={`${member.avatarBg} text-white font-bold text-xs shadow-xs shrink-0`}>
+                          <Avatar.Fallback>{member.initials}</Avatar.Fallback>
+                        </Avatar>
+                        <div className="flex flex-col text-left">
+                          <div className="flex items-center gap-1.5 whitespace-nowrap">
+                            <span className="text-xs font-bold text-slate-900 whitespace-nowrap">
+                              {member.name}
+                            </span>
+                            <span className="text-xs px-1.5 py-0.5 rounded bg-stone-100 text-slate-600 font-medium whitespace-nowrap shrink-0">
+                              {member.role}
+                            </span>
+                          </div>
+                          <span className="text-xs text-slate-500 whitespace-nowrap">
+                            {member.age} thn
+                          </span>
+                        </div>
+                      </div>
+
+                      {selectedMember.id === member.id && (
+                        <svg
+                          className="w-4 h-4 text-teal-600 shrink-0 ml-2"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                          strokeWidth="2.5"
+                        >
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                        </svg>
+                      )}
+                    </Dropdown.Item>
+                  ))}
+                </Dropdown.Menu>
+              </Dropdown.Popover>
+            </Dropdown>
           </div>
         </header>
 
-        {/* 2. SPLIT LAYOUT (LEFT 8 COLS: ANALYTICS / RIGHT 4 COLS: CHATBOT) */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-7 items-start">
-          {/* LEFT COLUMN: DASHBOARD ANALYTICS (8 COLS) */}
-          <div className="lg:col-span-8 space-y-6">
+        {/* 2. MAIN DASHBOARD CONTENT (FULL WIDTH) */}
+        <main className="space-y-6 w-full">
             {/* Greeting Header */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div>
                 <p className="text-xs text-slate-500 font-semibold tracking-wide">
-                  Halo, Budi Pratama 👋
+                  Halo, {selectedMember.name} 👋
                 </p>
                 <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
-                  Pantau Kesehatanmu Hari Ini
+                  Pantau Kesehatan {selectedMember.role === 'Kepala Keluarga' ? 'Keluarga' : selectedMember.name} Hari Ini
                 </h1>
               </div>
 
               <div className="flex items-center gap-2">
                 <Chip size="sm" color="success" variant="soft" className="font-semibold text-xs">
-                  Sinyal rPPG 98%
+                  Sinyal rPPG {selectedMember.signalQuality}%
                 </Chip>
                 <Button
                   size="sm"
                   variant="primary"
-                  className="bg-slate-900 text-white rounded-full font-bold px-4 shadow-xs"
+                  onPress={() => setIsMeasureModalOpen(true)}
+                  className="bg-slate-900 text-white rounded-full font-bold px-4 shadow-xs cursor-pointer"
                 >
                   Ukur Sekarang
                 </Button>
               </div>
             </div>
+
+            {/* HERO BANNER CARD WITH ILLUSTRATION (OPTION A) */}
+            <Card className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-teal-50/70 via-white to-stone-50/50 border border-teal-100/90 p-5 sm:p-6 shadow-xs">
+              <div className="flex flex-col md:flex-row items-center justify-between gap-6">
+                <div className="space-y-3 z-10 max-w-xl text-left">
+                  <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-teal-100/70 border border-teal-200/80 text-teal-900 text-xs font-bold">
+                    <span className="w-2 h-2 rounded-full bg-teal-600 animate-pulse inline-block" />
+                    Sensor Optik Kamera (rPPG)
+                  </div>
+
+                  <h2 className="text-xl sm:text-2xl font-extrabold text-slate-900 tracking-tight leading-snug">
+                    Pantau Vital Sign Mandiri & Non-Invasif
+                  </h2>
+
+                  <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
+                    Ukur detak jantung, variabilitas (HRV), dan laju pernapasan secara otomatis hanya melalui pantulan cahaya mikrosirkulasi wajah di webcam — tanpa alat tambahan.
+                  </p>
+
+                  <div className="flex flex-wrap items-center gap-3 pt-1">
+                    <Button
+                      size="sm"
+                      variant="primary"
+                      onPress={() => setIsMeasureModalOpen(true)}
+                      className="bg-slate-900 text-white rounded-full font-bold px-5 py-2 shadow-xs hover:bg-slate-800 transition flex items-center gap-2 text-xs cursor-pointer"
+                    >
+                      <svg className="w-4 h-4 text-teal-300 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                      </svg>
+                      Mulai Pengukuran rPPG
+                    </Button>
+
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onPress={() => {
+                        addAiMessage(
+                          'Teknologi rPPG (remote photoplethysmography) bekerja dengan mendeteksi perubahan mikroskopis warna kulit akibat aliran darah per denyut jantung menggunakan webcam standar Anda. Cukup duduk tenang dengan pencahayaan cukup!',
+                          true
+                        )
+                      }}
+                      className="text-slate-600 hover:text-slate-900 rounded-full font-semibold text-xs px-4 cursor-pointer"
+                    >
+                      Pelajari Cara Kerja ↗
+                    </Button>
+                  </div>
+                </div>
+
+                <div className="shrink-0 flex items-center justify-center p-1">
+                  <img
+                    src={vitalMonitoringIllustration}
+                    alt="Ilustrasi Pemantauan Data Vital"
+                    className="w-44 sm:w-52 md:w-60 h-auto max-h-44 object-contain drop-shadow-xs"
+                  />
+                </div>
+              </div>
+            </Card>
 
             {/* ROW 1: 3 VITAL METRIC SUMMARY CARDS (Like Consultations, Satisfaction, Revenue in ref) */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -350,13 +486,13 @@ export const Dashboard: React.FC = () => {
                   <span className="text-xs text-stone-400 font-mono">↗</span>
                 </div>
                 <div className="flex items-baseline gap-1.5">
-                  <span className="text-3xl font-extrabold text-slate-900 tracking-tight">72</span>
+                  <span className="text-3xl font-extrabold text-slate-900 tracking-tight">{selectedMember.hr}</span>
                   <span className="text-xs font-bold text-slate-400 uppercase">BPM</span>
                 </div>
                 <div className="flex items-center justify-between text-xs pt-1 border-t border-stone-100">
-                  <span className="text-slate-500 font-medium">Bln ini</span>
-                  <Chip size="sm" color="success" variant="soft" className="font-bold text-xs">
-                    +3% Normal
+                  <span className="text-slate-500 font-medium">Status</span>
+                  <Chip size="sm" color={selectedMember.status === 'Perlu Perhatian' ? 'warning' : 'success'} variant="soft" className="font-bold text-xs">
+                    {selectedMember.status}
                   </Chip>
                 </div>
               </Card>
@@ -368,13 +504,13 @@ export const Dashboard: React.FC = () => {
                   <span className="text-xs text-stone-400 font-mono">↗</span>
                 </div>
                 <div className="flex items-baseline gap-1.5">
-                  <span className="text-3xl font-extrabold text-slate-900 tracking-tight">52</span>
+                  <span className="text-3xl font-extrabold text-slate-900 tracking-tight">{selectedMember.hrv}</span>
                   <span className="text-xs font-bold text-slate-400 uppercase">ms RMSSD</span>
                 </div>
                 <div className="flex items-center justify-between text-xs pt-1 border-t border-stone-100">
                   <span className="text-slate-500 font-medium">Saraf Otonom</span>
                   <Chip size="sm" color="success" variant="soft" className="font-bold text-xs">
-                    Optimal
+                    {selectedMember.hrv >= 50 ? 'Optimal' : selectedMember.hrv >= 40 ? 'Sedang' : 'Waspada'}
                   </Chip>
                 </div>
               </Card>
@@ -386,7 +522,7 @@ export const Dashboard: React.FC = () => {
                   <span className="text-xs text-stone-400 font-mono">↗</span>
                 </div>
                 <div className="flex items-baseline gap-1.5">
-                  <span className="text-3xl font-extrabold text-slate-900 tracking-tight">16</span>
+                  <span className="text-3xl font-extrabold text-slate-900 tracking-tight">{selectedMember.rr}</span>
                   <span className="text-xs font-bold text-slate-400 uppercase">bpm</span>
                 </div>
                 <div className="flex items-center justify-between text-xs pt-1 border-t border-stone-100">
@@ -786,129 +922,7 @@ export const Dashboard: React.FC = () => {
                 </div>
               </Card>
             </div>
-          </div>
-
-          {/* RIGHT COLUMN: SAHABAT SEHAT AI CHATBOT (4 COLS) - Matching the tall gradient card from reference */}
-          <div className="lg:col-span-4">
-            <Card className="bg-gradient-to-b from-teal-800 via-teal-900 to-slate-950 text-white rounded-[2rem] p-5 sm:p-6 shadow-xl border border-teal-700/40 relative overflow-hidden flex flex-col justify-between min-h-[720px] space-y-5">
-              {/* Chatbot Header */}
-              <div className="space-y-3 pb-3 border-b border-white/10">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2.5">
-                    <div className="w-8 h-8 rounded-xl bg-teal-400 text-teal-950 flex items-center justify-center font-bold text-xs shadow-xs">
-                      AI
-                    </div>
-                    <div>
-                      <h2 className="text-sm font-bold text-white tracking-tight leading-tight">
-                        Sahabat Sehat AI
-                      </h2>
-                      <p className="text-xs text-teal-200/90">Konsultan Wellness Anda</p>
-                    </div>
-                  </div>
-
-                  <Chip size="sm" color="success" variant="soft" className="text-xs font-bold bg-emerald-400/20 text-emerald-300 border-emerald-400/30">
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse inline-block mr-1" />
-                    Online
-                  </Chip>
-                </div>
-
-                {/* Mini Summary Capsule (matching the calendar day selector style in ref) */}
-                <div className="p-2.5 rounded-xl bg-white/10 backdrop-blur-xs border border-white/10 flex items-center justify-between text-xs">
-                  <span className="text-stone-300">Status Hari Ini:</span>
-                  <span className="font-bold text-teal-300">72 BPM (Stabil)</span>
-                </div>
-              </div>
-
-              {/* Chat Messages Body */}
-              <div className="flex-1 overflow-y-auto space-y-3.5 pr-1 max-h-[440px] text-xs">
-                {chatMessages.map((msg) => (
-                  <div
-                    key={msg.id}
-                    className={`flex flex-col ${
-                      msg.sender === 'user' ? 'items-end' : 'items-start'
-                    }`}
-                  >
-                    <div
-                      className={`max-w-[85%] p-3 rounded-2xl leading-relaxed ${
-                        msg.sender === 'user'
-                          ? 'bg-teal-400 text-teal-950 font-semibold rounded-br-xs shadow-xs'
-                          : 'bg-white/12 text-stone-100 rounded-bl-xs border border-white/10'
-                      }`}
-                    >
-                      {msg.text}
-                    </div>
-                    <span className="text-xs text-stone-400 mt-1 px-1">
-                      {msg.sender === 'user' ? 'Anda' : 'Sahabat AI'} &middot; {msg.time}
-                    </span>
-                  </div>
-                ))}
-
-                {isAiTyping && (
-                  <div className="flex items-center gap-1.5 p-3 rounded-2xl bg-white/10 text-teal-200 w-fit">
-                    <span className="w-2 h-2 rounded-full bg-teal-300 animate-pulse" />
-                    <span className="w-2 h-2 rounded-full bg-teal-300 animate-pulse [animation-delay:0.2s]" />
-                    <span className="w-2 h-2 rounded-full bg-teal-300 animate-pulse [animation-delay:0.4s]" />
-                  </div>
-                )}
-                <div ref={chatBottomRef} />
-              </div>
-
-              {/* Chat Quick Suggestions & Input */}
-              <div className="space-y-3 pt-3 border-t border-white/10">
-                {/* Quick Prompts */}
-                <div className="flex items-center gap-1.5 overflow-x-auto pb-1 text-xs">
-                  <button
-                    type="button"
-                    onClick={() => handleSendMessage('Berapa baseline normal saya?')}
-                    className="px-2.5 py-1 rounded-full bg-white/10 hover:bg-white/20 text-teal-200 whitespace-nowrap transition cursor-pointer"
-                  >
-                    Berapa baseline normal?
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleSendMessage('Tips latihan pernapasan')}
-                    className="px-2.5 py-1 rounded-full bg-white/10 hover:bg-white/20 text-teal-200 whitespace-nowrap transition cursor-pointer"
-                  >
-                    Tips relaksasi
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleSendMessage('Pengaruh kafein hari ini')}
-                    className="px-2.5 py-1 rounded-full bg-white/10 hover:bg-white/20 text-teal-200 whitespace-nowrap transition cursor-pointer"
-                  >
-                    Pengaruh kopi
-                  </button>
-                </div>
-
-                {/* Input form */}
-                <form
-                  onSubmit={(e) => {
-                    e.preventDefault()
-                    handleSendMessage()
-                  }}
-                  className="flex items-center gap-2"
-                >
-                  <input
-                    type="text"
-                    placeholder="Tanya kesehatanmu ke AI..."
-                    value={inputMessage}
-                    onChange={(e) => setInputMessage(e.target.value)}
-                    className="flex-1 px-3.5 py-2.5 rounded-xl bg-white/15 border border-white/20 text-white placeholder:text-stone-400 text-xs focus:outline-none focus:ring-2 focus:ring-teal-400/50"
-                  />
-                  <button
-                    type="submit"
-                    disabled={!inputMessage.trim()}
-                    className="p-2.5 rounded-xl bg-teal-400 hover:bg-teal-300 text-teal-950 font-bold transition disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer shrink-0"
-                  >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3" />
-                    </svg>
-                  </button>
-                </form>
-              </div>
-            </Card>
-          </div>
-        </div>
+        </main>
 
         {/* 3. PERSISTENT DISCLAIMER FOOTER */}
         <footer className="pt-4 border-t border-stone-100 text-center text-xs text-slate-500 space-y-1">
@@ -977,6 +991,88 @@ export const Dashboard: React.FC = () => {
                   className="px-6 py-2 rounded-full text-xs font-bold bg-slate-900 hover:bg-slate-800 text-white shadow-xs"
                 >
                   Simpan Aktivitas
+                </Button>
+              </Modal.Footer>
+            </Modal.Dialog>
+          </Modal.Container>
+        </Modal.Backdrop>
+      </Modal>
+
+      {/* SIMULATED rPPG MEASUREMENT MODAL */}
+      <Modal isOpen={isMeasureModalOpen} onOpenChange={setIsMeasureModalOpen}>
+        <Modal.Backdrop className="bg-slate-900/60 backdrop-blur-xs fixed inset-0 z-50 flex items-center justify-center p-4">
+          <Modal.Container className="w-full max-w-lg">
+            <Modal.Dialog className="bg-white rounded-3xl p-6 sm:p-8 w-full border border-stone-200 shadow-2xl space-y-5">
+              <Modal.CloseTrigger />
+              <Modal.Header className="space-y-1 pb-3 border-b border-stone-100">
+                <div className="flex items-center gap-2">
+                  <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-ping inline-block" />
+                  <Modal.Heading className="text-base sm:text-lg font-bold text-slate-900 tracking-tight">
+                    Pengukuran Vital Sign Kamera (rPPG)
+                  </Modal.Heading>
+                </div>
+                <p className="text-xs text-slate-500">
+                  Pastikan wajah berada di dalam bingkai dan pencahayaan ruangan memadai.
+                </p>
+              </Modal.Header>
+
+              <Modal.Body className="space-y-4">
+                {/* Simulated Webcam Viewfinder */}
+                <div className="relative w-full h-56 bg-slate-950 rounded-2xl overflow-hidden flex flex-col items-center justify-center border border-slate-800">
+                  {/* Facial Oval Frame */}
+                  <div className="w-32 h-44 border-2 border-dashed border-teal-400/70 rounded-[50%] flex items-center justify-center relative animate-pulse">
+                    <span className="text-[10px] font-mono text-teal-300 bg-slate-900/80 px-2 py-0.5 rounded-full">
+                      Posisikan Wajah
+                    </span>
+                  </div>
+
+                  {/* Top-right Status Pill */}
+                  <div className="absolute top-3 right-3 flex items-center gap-1.5 bg-black/60 backdrop-blur-xs px-2.5 py-1 rounded-full text-[11px] text-emerald-400 font-mono">
+                    <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                    Kualitas: {selectedMember.signalQuality}%
+                  </div>
+
+                  {/* Bottom live stats */}
+                  <div className="absolute bottom-3 left-3 right-3 flex items-center justify-between bg-black/60 backdrop-blur-xs px-3 py-1.5 rounded-xl text-xs text-white">
+                    <span className="text-slate-300">Detak Estimasi:</span>
+                    <span className="font-mono font-bold text-teal-300">{selectedMember.hr} BPM</span>
+                  </div>
+                </div>
+
+                {/* Progress bar */}
+                <div className="space-y-1.5">
+                  <div className="flex justify-between text-xs font-semibold text-slate-600">
+                    <span>Memproses Sinyal Mikrovaskular Wajah...</span>
+                    <span className="text-teal-700 font-mono font-bold">100%</span>
+                  </div>
+                  <div className="w-full bg-stone-100 rounded-full h-2 overflow-hidden">
+                    <div className="bg-teal-700 h-2 rounded-full w-full transition-all duration-500" />
+                  </div>
+                </div>
+              </Modal.Body>
+
+              <Modal.Footer className="flex items-center justify-end gap-3 pt-3 border-t border-stone-100">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onPress={() => setIsMeasureModalOpen(false)}
+                  className="px-5 py-2 rounded-full text-xs font-semibold text-slate-600 hover:bg-stone-100 cursor-pointer"
+                >
+                  Tutup
+                </Button>
+                <Button
+                  variant="primary"
+                  size="sm"
+                  onPress={() => {
+                    setIsMeasureModalOpen(false)
+                    addAiMessage(
+                      `Pengukuran rPPG selesai untuk ${selectedMember.name}. Hasil: ${selectedMember.hr} BPM, HRV ${selectedMember.hrv} ms (${selectedMember.status}). Kondisi Anda terpantau stabil! 👍`,
+                      true
+                    )
+                  }}
+                  className="px-6 py-2 rounded-full text-xs font-bold bg-teal-800 hover:bg-teal-900 text-white shadow-xs cursor-pointer"
+                >
+                  Simpan & Perbarui Data
                 </Button>
               </Modal.Footer>
             </Modal.Dialog>
