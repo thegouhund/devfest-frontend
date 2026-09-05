@@ -1,6 +1,5 @@
-import React, { useState } from 'react'
+import React, { useState, useRef, useEffect } from 'react'
 import {
-  Alert,
   Avatar,
   Button,
   ButtonGroup,
@@ -22,6 +21,13 @@ interface ActivityItem {
   timestamp: number // for chart positioning
 }
 
+interface ChatMessage {
+  id: string
+  sender: 'ai' | 'user'
+  text: string
+  time: string
+}
+
 export const Dashboard: React.FC = () => {
   const [activeNav, setActiveNav] = useState<string>('dashboard')
   const [timeRange, setTimeRange] = useState<'harian' | 'mingguan' | 'bulanan'>('harian')
@@ -32,6 +38,35 @@ export const Dashboard: React.FC = () => {
   const [isLogModalOpen, setIsLogModalOpen] = useState<boolean>(false)
   const [selectedLogCategory, setSelectedLogCategory] = useState<ActivityItem['category'] | null>(null)
   const [logDetail, setLogDetail] = useState<string>('')
+
+  // Chatbot State
+  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([
+    {
+      id: '1',
+      sender: 'ai',
+      text: 'Halo Budi! 👋 Data vital rPPG Anda pagi ini menunjukkan 72 BPM & HRV 52 ms (stabil). Ada yang ingin Anda tanyakan seputar kondisi tubuh hari ini?',
+      time: '08:31 WIB',
+    },
+    {
+      id: '2',
+      sender: 'user',
+      text: 'Kenapa jam 10 tadi detak jantungku sempat naik ke 84 BPM?',
+      time: '10:15 WIB',
+    },
+    {
+      id: '3',
+      sender: 'ai',
+      text: 'Itu respon normal terhadap kafein dari 1 cangkir kopi hitam yang Anda catat pada 09:15 WIB. Setelah 1 jam, denyut Anda sudah berangsur kembali ke baseline normal 72 BPM. Pastikan cukup minum air putih ya! 💧',
+      time: '10:16 WIB',
+    },
+  ])
+  const [inputMessage, setInputMessage] = useState<string>('')
+  const [isAiTyping, setIsAiTyping] = useState<boolean>(false)
+  const chatBottomRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    chatBottomRef.current?.scrollIntoView({ behavior: 'smooth' })
+  }, [chatMessages, isAiTyping])
 
   // Activity list
   const [activities, setActivities] = useState<ActivityItem[]>([
@@ -95,16 +130,15 @@ export const Dashboard: React.FC = () => {
     timeRange === 'harian' ? hourlyData : timeRange === 'mingguan' ? weeklyData : monthlyData
 
   // SVG Chart Geometry
-  const svgWidth = 760
-  const svgHeight = 240
+  const svgWidth = 720
+  const svgHeight = 220
   const padLeft = 40
-  const padRight = 30
-  const padTop = 25
-  const padBottom = 35
+  const padRight = 25
+  const padTop = 24
+  const padBottom = 34
   const plotWidth = svgWidth - padLeft - padRight
   const plotHeight = svgHeight - padTop - padBottom
 
-  // Min/Max for HR scale
   const minHR = 50
   const maxHR = 100
 
@@ -117,11 +151,9 @@ export const Dashboard: React.FC = () => {
     return padLeft + (idx / (currentChartData.length - 1)) * plotWidth
   }
 
-  // Generate SVG Path
   const hrPoints = currentChartData.map((d, i) => `${getX(i)},${getY(d.hr)}`).join(' ')
   const areaPoints = `${getX(0)},${padTop + plotHeight} ${hrPoints} ${getX(currentChartData.length - 1)},${padTop + plotHeight}`
 
-  // Quick categories
   const categories = [
     { key: 'kopi', label: 'Kopi', icon: '☕' },
     { key: 'olahraga', label: 'Olahraga', icon: '🏃' },
@@ -150,16 +182,59 @@ export const Dashboard: React.FC = () => {
     setLogDetail('')
   }
 
+  const handleSendMessage = (textToSend?: string) => {
+    const text = (textToSend || inputMessage).trim()
+    if (!text) return
+
+    const now = new Date()
+    const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')} WIB`
+
+    const userMsg: ChatMessage = {
+      id: Date.now().toString(),
+      sender: 'user',
+      text,
+      time: timeStr,
+    }
+
+    setChatMessages((prev) => [...prev, userMsg])
+    if (!textToSend) setInputMessage('')
+    setIsAiTyping(true)
+
+    // Simulated intelligent response
+    setTimeout(() => {
+      let reply = 'Terima kasih atas pertanyaannya. Berdasarkan data vital rPPG terkini, parameter Anda berada dalam zona pemulihan yang sehat. Tetap jaga hidrasi dan istirahat teratur.'
+
+      const lower = text.toLowerCase()
+      if (lower.includes('baseline') || lower.includes('normal')) {
+        reply = 'Baseline denyut jantung istirahat Anda adalah 69 BPM dengan rentang sehat 60-80 BPM. Nilai 72 BPM saat ini menunjukkan kondisi kardiovaskular yang stabil.'
+      } else if (lower.includes('napas') || lower.includes('pernapasan') || lower.includes('relaksasi')) {
+        reply = 'Laju napas Anda adalah 16 bpm (rileks). Jika merasa tegang, cobalah teknik 4-7-8: tarik napas 4 detik, tahan 7 detik, lalu hembuskan perlahan 8 detik.'
+      } else if (lower.includes('kopi') || lower.includes('kafein')) {
+        reply = 'Kafein merangsang saraf simpatis selama 1-2 jam pertama. Lonjakan kecil ke 84 BPM adalah wajar dan HRV Anda tetap menunjukkan pemulihan saraf otonom yang kuat.'
+      }
+
+      const aiMsg: ChatMessage = {
+        id: (Date.now() + 1).toString(),
+        sender: 'ai',
+        text: reply,
+        time: `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')} WIB`,
+      }
+      setChatMessages((prev) => [...prev, aiMsg])
+      setIsAiTyping(false)
+    }, 700)
+  }
+
   return (
-    <div className="min-h-screen bg-[#F6F4EE] text-slate-900 flex flex-col font-sans antialiased">
-      {/* 1. TOP BAR NAVIGATION */}
-      <nav className="sticky top-0 z-40 bg-white/90 backdrop-blur-md border-b border-stone-200/80 px-4 sm:px-8 py-3">
-        <div className="max-w-6xl w-full mx-auto flex items-center justify-between">
-          {/* Brand Logo & Clinical Monogram */}
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-xl bg-teal-800 text-white flex items-center justify-center font-bold shadow-xs">
+    <div className="min-h-screen bg-[#F0EEE6] text-slate-900 flex flex-col items-center justify-start p-3 sm:p-6 lg:p-8 font-sans antialiased">
+      {/* MAIN CONTAINER (Matching Tablet-like Frame from Reference) */}
+      <div className="w-full max-w-7xl bg-white/95 backdrop-blur-md rounded-[2.5rem] border border-stone-200/80 shadow-[0_20px_50px_-15px_rgba(0,0,0,0.05)] p-5 sm:p-7 md:p-9 space-y-7">
+        {/* 1. TOP NAVIGATION BAR (Exact reference aesthetic) */}
+        <header className="flex flex-col md:flex-row items-center justify-between gap-4 pb-4 border-b border-stone-100">
+          {/* Brand Logo with cross/heart symbol */}
+          <div className="flex items-center gap-3 self-start md:self-auto">
+            <div className="w-10 h-10 rounded-2xl bg-teal-800 text-white flex items-center justify-center font-bold shadow-xs">
               <svg
-                className="w-4 h-4 text-white"
+                className="w-5 h-5 text-white"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -173,268 +248,170 @@ export const Dashboard: React.FC = () => {
               </svg>
             </div>
             <div>
-              <span className="text-base font-bold text-slate-900 tracking-tight block leading-tight">
+              <span className="text-lg font-bold text-slate-900 tracking-tight block leading-tight">
                 Nadiku
               </span>
               <span className="text-xs text-teal-800 font-semibold tracking-wide uppercase">
-                Family Health Sanctuary
+                Family Health Monitor
               </span>
             </div>
           </div>
 
-          {/* Navigation Links with HeroUI Buttons */}
-          <div className="hidden md:flex items-center gap-1 bg-stone-100/80 p-1 rounded-full border border-stone-200/60">
+          {/* Navigation Pill Group (Active = solid pill, inactive = soft text) */}
+          <nav className="flex items-center gap-1 bg-stone-100/80 p-1.5 rounded-full border border-stone-200/60 overflow-x-auto max-w-full">
             {[
-              { id: 'dashboard', label: 'Ringkasan' },
+              { id: 'dashboard', label: 'Dashboard' },
               { id: 'rppg', label: 'Pengukuran rPPG' },
-              { id: 'history', label: 'Tren Vital' },
-              { id: 'family', label: 'Keluarga' },
-            ].map((nav) => (
+              { id: 'riwayat', label: 'Riwayat & Tren' },
+              { id: 'aktivitas', label: 'Aktivitas' },
+              { id: 'keluarga', label: 'Keluarga' },
+            ].map((tab) => (
               <Button
-                key={nav.id}
+                key={tab.id}
                 size="sm"
-                variant={activeNav === nav.id ? 'primary' : 'ghost'}
-                onPress={() => setActiveNav(nav.id)}
-                className={`px-3.5 py-1 rounded-full text-xs font-semibold transition ${
-                  activeNav === nav.id
-                    ? 'bg-white text-slate-900 shadow-xs font-bold'
+                variant={activeNav === tab.id ? 'primary' : 'ghost'}
+                onPress={() => setActiveNav(tab.id)}
+                className={`px-4 py-1.5 rounded-full text-xs font-semibold transition ${
+                  activeNav === tab.id
+                    ? 'bg-slate-900 text-white shadow-xs font-bold'
                     : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
-                {nav.label}
+                {tab.label}
               </Button>
             ))}
-          </div>
+          </nav>
 
-          {/* User Profile & Telegram Status */}
-          <div className="flex items-center gap-3">
-            <Chip
-              size="sm"
-              color="accent"
-              variant="soft"
-              className="hidden sm:inline-flex font-semibold text-xs items-center gap-1.5"
+          {/* Right Utilities (Search, Notification, Avatar) */}
+          <div className="flex items-center gap-3 self-end md:self-auto">
+            {/* Quick search input */}
+            <div className="hidden lg:flex items-center gap-2 px-3 py-1.5 bg-stone-100/80 border border-stone-200/70 rounded-full text-xs text-slate-500">
+              <svg className="w-3.5 h-3.5 text-stone-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+              <span>Cari data vital...</span>
+            </div>
+
+            {/* Notification Bell with Badge */}
+            <button
+              type="button"
+              className="w-9 h-9 rounded-full bg-stone-100 hover:bg-stone-200/80 flex items-center justify-center text-slate-700 relative transition cursor-pointer"
             >
-              <span className="w-1.5 h-1.5 rounded-full bg-teal-600 animate-pulse inline-block mr-1" />
-              Telegram Bot Aktif
-            </Chip>
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+              </svg>
+              <span className="w-2 h-2 rounded-full bg-rose-500 absolute top-2 right-2 border-2 border-white" />
+            </button>
 
-            <div className="flex items-center gap-2 pl-2 border-l border-stone-200">
+            {/* User Profile Avatar */}
+            <div className="flex items-center gap-2 pl-1 border-l border-stone-200">
               <Avatar size="sm" className="bg-teal-900 text-white font-bold text-xs shadow-xs">
                 <Avatar.Fallback>BP</Avatar.Fallback>
               </Avatar>
-              <div className="hidden sm:block text-left leading-tight">
-                <span className="text-xs font-bold text-slate-900 block">Budi Pratama</span>
-                <span className="text-xs text-slate-500 font-medium">Akun Utama</span>
-              </div>
             </div>
           </div>
-        </div>
-      </nav>
-
-      {/* 2. MAIN SANCTUARY CONTENT */}
-      <main className="max-w-6xl w-full mx-auto px-4 sm:px-8 py-6 sm:py-8 space-y-8 flex-1">
-        {/* Natural Header Greeting */}
-        <header className="space-y-1 pt-1">
-          <div className="flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-emerald-600 animate-pulse" />
-            <span className="text-xs font-semibold text-teal-900 uppercase tracking-wider">
-              Kondisi Fisiologis Terkalibrasi
-            </span>
-          </div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
-            Selamat Pagi, Budi
-          </h1>
-          <p className="text-xs sm:text-sm text-slate-600">
-            Pemeriksaan terakhir dicatat pukul <strong>08:30 WIB</strong> &middot; Kualitas sinyal 98% (Sangat Baik).
-          </p>
         </header>
 
-        {/* HERO CTA PENGUKURAN RAMAH LANSIA (SENIOR-ACCESSIBLE PRIMARY HERO CTA) */}
-        <Card className="bg-white rounded-3xl p-6 sm:p-8 border-2 border-teal-700/25 shadow-[0_8px_30px_-6px_rgba(13,148,136,0.08)] relative overflow-hidden">
-          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
-            {/* Left: Instructional Context with High Contrast & Senior-Friendly Typography */}
-            <div className="flex items-start sm:items-center gap-4 sm:gap-5">
-              <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-teal-50 border border-teal-200 text-teal-800 flex items-center justify-center shrink-0 shadow-xs">
-                <svg
-                  className="w-7 h-7 sm:w-8 sm:h-8 text-teal-800"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                  strokeWidth="2"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"
-                  />
-                  <circle cx="9" cy="12" r="3.2" strokeWidth="2" />
-                </svg>
-              </div>
-
-              <div className="space-y-1.5">
-                <div className="flex flex-wrap items-center gap-2">
-                  <span className="inline-flex items-center gap-1.5 text-xs font-bold text-teal-900 bg-teal-50 px-2.5 py-0.5 rounded-full border border-teal-200">
-                    <span className="w-2 h-2 rounded-full bg-emerald-600 animate-pulse" />
-                    Kamera rPPG Siap Digunakan
-                  </span>
-                  <span className="text-xs text-slate-500 font-medium">Hanya 30 Detik</span>
-                </div>
-
-                <h2 className="text-xl sm:text-2xl font-extrabold text-slate-900 tracking-tight leading-tight">
-                  Periksa Detak Jantung & Vitalitas Sekarang
-                </h2>
-
-                <p className="text-sm text-slate-600 font-normal leading-relaxed max-w-xl">
-                  Cukup tatap layar kamera di ruangan yang terang. Praktis, nyaman, tanpa kabel sensor, dan tanpa menyentuh apapun.
-                </p>
-              </div>
-            </div>
-
-            {/* Right: Big, High-Contrast Senior-Friendly Button */}
-            <div className="shrink-0 flex flex-col sm:flex-row lg:flex-col items-stretch sm:items-center lg:items-end gap-2">
-              <Button
-                variant="primary"
-                size="lg"
-                className="h-14 sm:h-16 px-8 sm:px-10 rounded-2xl bg-teal-800 hover:bg-teal-900 active:scale-98 text-white font-bold text-base sm:text-lg flex items-center justify-center gap-3 transition shadow-md cursor-pointer border border-teal-700"
-              >
-                <span className="w-3 h-3 rounded-full bg-emerald-400 animate-ping shrink-0" />
-                <span>Mulai Ukur Sekarang</span>
-                <svg
-                  className="w-5 h-5 text-teal-200 shrink-0"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                  strokeWidth="2.5"
-                >
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3" />
-                </svg>
-              </Button>
-              <span className="text-xs text-slate-500 font-medium text-center lg:text-right">
-                Sentuh tombol hijau gelap di atas untuk memulai
-              </span>
-            </div>
-          </div>
-        </Card>
-
-        {/* 3. VITAL TELEMETRY HUB (A Single Cohesive Sanctuary Panel, not 3 disconnected SaaS cards) */}
-        <Card className="bg-white rounded-3xl p-6 sm:p-8 border border-stone-200/90 shadow-[0_4px_24px_-4px_rgba(0,0,0,0.03)] space-y-6">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-center">
-            {/* Primary Focal Metric: Detak Jantung (Heart Rate) - 5 Cols */}
-            <div className="lg:col-span-5 space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
-                  <span className="w-1.5 h-1.5 rounded-full bg-rose-500" />
-                  Detak Jantung Istirahat (HR)
-                </span>
-                <Chip size="sm" color="success" variant="soft" className="font-bold text-xs">
-                  Normal & Stabil
-                </Chip>
-              </div>
-
-              <div className="flex items-baseline gap-2.5">
-                <span className="text-5xl sm:text-6xl font-black text-slate-900 tracking-tight font-mono">
-                  72
-                </span>
-                <span className="text-sm font-bold text-slate-500 uppercase tracking-wide">
-                  BPM
-                </span>
-              </div>
-
-              <div className="flex items-center gap-2 text-xs text-slate-600 font-medium">
-                <span className="text-emerald-800 font-semibold bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200">
-                  +3% di atas baseline
-                </span>
-                <span>Baseline personal Anda: 69 BPM</span>
-              </div>
-            </div>
-
-            {/* Vertical Hairline Divider for Desktop */}
-            <div className="hidden lg:block w-[1px] h-24 bg-stone-200" />
-
-            {/* Companion Metric 1: HRV (RMSSD) - 3.5 Cols */}
-            <div className="lg:col-span-3 space-y-2 border-t lg:border-t-0 pt-4 lg:pt-0 border-stone-100">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
-                  <span className="w-1.5 h-1.5 rounded-full bg-teal-500" />
-                  Variabilitas (HRV)
-                </span>
-                <Chip size="sm" color="success" variant="soft" className="font-bold text-xs">
-                  Optimal
-                </Chip>
-              </div>
-
-              <div className="flex items-baseline gap-1.5">
-                <span className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight font-mono">
-                  52
-                </span>
-                <span className="text-xs font-bold text-slate-500 uppercase">ms RMSSD</span>
-              </div>
-
-              <p className="text-xs text-slate-500 leading-relaxed">
-                Pemulihan saraf otonom parasimpatis berada dalam kondisi prima.
-              </p>
-            </div>
-
-            {/* Companion Metric 2: Laju Pernapasan (Respiration) - 3 Cols */}
-            <div className="lg:col-span-3 space-y-2 border-t lg:border-t-0 pt-4 lg:pt-0 border-stone-100">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
-                  <span className="w-1.5 h-1.5 rounded-full bg-sky-500" />
-                  Laju Pernapasan
-                </span>
-                <Chip size="sm" color="success" variant="soft" className="font-bold text-xs">
-                  Rileks
-                </Chip>
-              </div>
-
-              <div className="flex items-baseline gap-1.5">
-                <span className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight font-mono">
-                  16
-                </span>
-                <span className="text-xs font-bold text-slate-500 uppercase">nafas / mnt</span>
-              </div>
-
-              <p className="text-xs text-slate-500 leading-relaxed">
-                Irama pernapasan teratur dalam batas wajar orang dewasa (12-20 bpm).
-              </p>
-            </div>
-          </div>
-
-          {/* Unified Clinical Telemetry Status Strip */}
-          <div className="pt-4 border-t border-stone-100 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs text-slate-500 bg-stone-50/70 p-3 rounded-2xl">
-            <div className="flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-teal-600" />
-              <span>Sensor Optik Kamera: Resolusi stabil 30 FPS tanpa jitter sinyal.</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="text-slate-400">&middot;</span>
-              <span>Terhubung dengan: Keluarga Pratama (4 Anggota)</span>
-            </div>
-          </div>
-        </Card>
-
-        {/* 4. CHRONOLOGICAL TELEMETRY TIMELINE & JOURNAL (Asymmetric 8 cols / 4 cols Layout) */}
-        <section className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-          {/* LEFT: 8 Columns - The Day's Flow (Vital Trend Curve & Timeline Correlation) */}
+        {/* 2. SPLIT LAYOUT (LEFT 8 COLS: ANALYTICS / RIGHT 4 COLS: CHATBOT) */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-7 items-start">
+          {/* LEFT COLUMN: DASHBOARD ANALYTICS (8 COLS) */}
           <div className="lg:col-span-8 space-y-6">
-            <Card className="bg-white rounded-3xl p-6 sm:p-8 border border-stone-200/90 shadow-[0_4px_24px_-4px_rgba(0,0,0,0.03)] space-y-6">
-              {/* Timeline Header & Control Bar */}
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-stone-100">
+            {/* Greeting Header */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div>
+                <p className="text-xs text-slate-500 font-semibold tracking-wide">
+                  Halo, Budi Pratama 👋
+                </p>
+                <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
+                  Pantau Kesehatanmu Hari Ini
+                </h1>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <Chip size="sm" color="success" variant="soft" className="font-semibold text-xs">
+                  Sinyal rPPG 98%
+                </Chip>
+                <Button
+                  size="sm"
+                  variant="primary"
+                  className="bg-slate-900 text-white rounded-full font-bold px-4 shadow-xs"
+                >
+                  Ukur Sekarang
+                </Button>
+              </div>
+            </div>
+
+            {/* ROW 1: 3 VITAL METRIC SUMMARY CARDS (Like Consultations, Satisfaction, Revenue in ref) */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              {/* Metric 1: Heart Rate */}
+              <Card className="p-5 rounded-2xl bg-white border border-stone-200/90 shadow-xs space-y-3 relative">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-slate-600">Detak Jantung</span>
+                  <span className="text-xs text-stone-400 font-mono">↗</span>
+                </div>
+                <div className="flex items-baseline gap-1.5">
+                  <span className="text-3xl font-extrabold text-slate-900 tracking-tight">72</span>
+                  <span className="text-xs font-bold text-slate-400 uppercase">BPM</span>
+                </div>
+                <div className="flex items-center justify-between text-xs pt-1 border-t border-stone-100">
+                  <span className="text-slate-500 font-medium">Bln ini</span>
+                  <Chip size="sm" color="success" variant="soft" className="font-bold text-xs">
+                    +3% Normal
+                  </Chip>
+                </div>
+              </Card>
+
+              {/* Metric 2: HRV RMSSD */}
+              <Card className="p-5 rounded-2xl bg-white border border-stone-200/90 shadow-xs space-y-3 relative">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-slate-600">Variabilitas (HRV)</span>
+                  <span className="text-xs text-stone-400 font-mono">↗</span>
+                </div>
+                <div className="flex items-baseline gap-1.5">
+                  <span className="text-3xl font-extrabold text-slate-900 tracking-tight">52</span>
+                  <span className="text-xs font-bold text-slate-400 uppercase">ms RMSSD</span>
+                </div>
+                <div className="flex items-center justify-between text-xs pt-1 border-t border-stone-100">
+                  <span className="text-slate-500 font-medium">Saraf Otonom</span>
+                  <Chip size="sm" color="success" variant="soft" className="font-bold text-xs">
+                    Optimal
+                  </Chip>
+                </div>
+              </Card>
+
+              {/* Metric 3: Respiration Rate */}
+              <Card className="p-5 rounded-2xl bg-white border border-stone-200/90 shadow-xs space-y-3 relative">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-slate-600">Laju Pernapasan</span>
+                  <span className="text-xs text-stone-400 font-mono">↗</span>
+                </div>
+                <div className="flex items-baseline gap-1.5">
+                  <span className="text-3xl font-extrabold text-slate-900 tracking-tight">16</span>
+                  <span className="text-xs font-bold text-slate-400 uppercase">bpm</span>
+                </div>
+                <div className="flex items-center justify-between text-xs pt-1 border-t border-stone-100">
+                  <span className="text-slate-500 font-medium">Rentang 12-20</span>
+                  <Chip size="sm" color="success" variant="soft" className="font-bold text-xs">
+                    Rileks
+                  </Chip>
+                </div>
+              </Card>
+            </div>
+
+            {/* ROW 2: PROMINENT TIME-SERIES TREND CARD (Like Current Patients section in ref) */}
+            <Card className="p-5 sm:p-6 rounded-3xl bg-white border border-stone-200/90 shadow-xs space-y-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-stone-100">
                 <div>
-                  <h2 className="text-lg font-bold text-slate-900 tracking-tight">
-                    Bio-Ritme & Dinamika Harian
+                  <h2 className="text-base font-bold text-slate-900 tracking-tight">
+                    Tren Dinamika Vital Sign & Baseline
                   </h2>
                   <p className="text-xs text-slate-500 mt-0.5">
-                    Memvisualisasikan korelasi denyut nadi dengan kebiasaan gaya hidup Anda.
+                    Korelasi fluktuasi denyut nadi dengan kebiasaan gaya hidup Anda.
                   </p>
                 </div>
 
-                <div className="flex flex-wrap items-center gap-4">
-                  {/* Activity Marker Toggle with HeroUI Switch */}
-                  <Switch
-                    isSelected={showActivityOverlay}
-                    onChange={setShowActivityOverlay}
-                  >
+                <div className="flex flex-wrap items-center gap-3">
+                  <Switch isSelected={showActivityOverlay} onChange={setShowActivityOverlay}>
                     <Switch.Control>
                       <Switch.Thumb />
                     </Switch.Control>
@@ -443,16 +420,15 @@ export const Dashboard: React.FC = () => {
                     </Switch.Content>
                   </Switch>
 
-                  {/* Time Range Filter with HeroUI ButtonGroup */}
                   <ButtonGroup variant="secondary" className="bg-stone-100 p-1 rounded-full text-xs">
                     <Button
                       size="sm"
                       variant={timeRange === 'harian' ? 'primary' : 'ghost'}
                       onPress={() => setTimeRange('harian')}
-                      className={`px-3 py-1 rounded-full transition text-xs font-semibold ${
+                      className={`px-3 py-1 rounded-full text-xs font-semibold ${
                         timeRange === 'harian'
                           ? 'bg-white text-slate-900 shadow-xs font-bold'
-                          : 'text-slate-500 hover:text-slate-800'
+                          : 'text-slate-500'
                       }`}
                     >
                       Harian
@@ -461,44 +437,32 @@ export const Dashboard: React.FC = () => {
                       size="sm"
                       variant={timeRange === 'mingguan' ? 'primary' : 'ghost'}
                       onPress={() => setTimeRange('mingguan')}
-                      className={`px-3 py-1 rounded-full transition text-xs font-semibold ${
+                      className={`px-3 py-1 rounded-full text-xs font-semibold ${
                         timeRange === 'mingguan'
                           ? 'bg-white text-slate-900 shadow-xs font-bold'
-                          : 'text-slate-500 hover:text-slate-800'
+                          : 'text-slate-500'
                       }`}
                     >
                       Mingguan
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant={timeRange === 'bulanan' ? 'primary' : 'ghost'}
-                      onPress={() => setTimeRange('bulanan')}
-                      className={`px-3 py-1 rounded-full transition text-xs font-semibold ${
-                        timeRange === 'bulanan'
-                          ? 'bg-white text-slate-900 shadow-xs font-bold'
-                          : 'text-slate-500 hover:text-slate-800'
-                      }`}
-                    >
-                      Bulanan
                     </Button>
                   </ButtonGroup>
                 </div>
               </div>
 
-              {/* Responsive SVG Chart */}
+              {/* Chart SVG Canvas */}
               <div className="w-full overflow-x-auto">
                 <svg
                   viewBox={`0 0 ${svgWidth} ${svgHeight}`}
-                  className="w-full min-w-[620px] h-[240px] overflow-visible select-none"
+                  className="w-full min-w-[580px] h-[220px] overflow-visible select-none"
                 >
                   <defs>
-                    <linearGradient id="tealAreaGrad" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="#0E7490" stopOpacity="0.14" />
+                    <linearGradient id="tealGrad" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="#0E7490" stopOpacity="0.18" />
                       <stop offset="100%" stopColor="#0E7490" stopOpacity="0.0" />
                     </linearGradient>
                   </defs>
 
-                  {/* Reference Grid */}
+                  {/* Horizontal Grid lines */}
                   {[50, 65, 80, 95].map((hrVal) => {
                     const y = getY(hrVal)
                     return (
@@ -512,7 +476,7 @@ export const Dashboard: React.FC = () => {
                           strokeWidth="1"
                         />
                         <text
-                          x={padLeft - 10}
+                          x={padLeft - 8}
                           y={y + 4}
                           textAnchor="end"
                           className="text-xs font-mono fill-stone-400 font-semibold"
@@ -523,7 +487,7 @@ export const Dashboard: React.FC = () => {
                     )
                   })}
 
-                  {/* Baseline Reference Dashed Line (69 BPM) */}
+                  {/* Baseline 69 BPM */}
                   <line
                     x1={padLeft}
                     y1={getY(69)}
@@ -532,7 +496,6 @@ export const Dashboard: React.FC = () => {
                     stroke="#10B981"
                     strokeWidth="1.5"
                     strokeDasharray="4 4"
-                    strokeOpacity="0.7"
                   />
                   <text
                     x={svgWidth - padRight - 5}
@@ -543,10 +506,10 @@ export const Dashboard: React.FC = () => {
                     Baseline: 69 BPM
                   </text>
 
-                  {/* Shaded Area */}
-                  <polygon points={areaPoints} fill="url(#tealAreaGrad)" />
+                  {/* Area fill */}
+                  <polygon points={areaPoints} fill="url(#tealGrad)" />
 
-                  {/* Main Curve */}
+                  {/* Polyline curve */}
                   <polyline
                     points={hrPoints}
                     fill="none"
@@ -556,7 +519,7 @@ export const Dashboard: React.FC = () => {
                     strokeLinejoin="round"
                   />
 
-                  {/* Data Points & Tooltip */}
+                  {/* Data Points */}
                   {currentChartData.map((d, idx) => {
                     const cx = getX(idx)
                     const cy = getY(d.hr)
@@ -578,8 +541,6 @@ export const Dashboard: React.FC = () => {
                               : 'fill-white stroke-teal-700 stroke-2'
                           }`}
                         />
-
-                        {/* X-Axis Label */}
                         <text
                           x={cx}
                           y={padTop + plotHeight + 18}
@@ -588,31 +549,21 @@ export const Dashboard: React.FC = () => {
                         >
                           {d.label}
                         </text>
-
-                        {/* Hover Telemetry Card */}
                         {isHovered && (
                           <g>
                             <rect
-                              x={cx - 45}
-                              y={cy - 48}
-                              width="90"
-                              height="36"
+                              x={cx - 40}
+                              y={cy - 44}
+                              width="80"
+                              height="32"
                               rx="8"
                               className="fill-slate-900 shadow-md"
                             />
                             <text
                               x={cx}
-                              y={cy - 32}
+                              y={cy - 24}
                               textAnchor="middle"
-                              className="text-xs fill-stone-300 font-medium"
-                            >
-                              {d.time}
-                            </text>
-                            <text
-                              x={cx}
-                              y={cy - 18}
-                              textAnchor="middle"
-                              className="text-xs fill-white font-bold font-mono"
+                              className="text-xs fill-white font-bold"
                             >
                               {d.hr} BPM
                             </text>
@@ -631,13 +582,13 @@ export const Dashboard: React.FC = () => {
                       )
                       if (dataIndex === -1) return null
                       const actX = getX(dataIndex)
-                      const actY = getY(hourlyData[dataIndex].hr) - 24
+                      const actY = getY(hourlyData[dataIndex].hr) - 22
 
                       return (
-                        <g key={act.id} className="cursor-pointer group">
+                        <g key={act.id} className="cursor-pointer">
                           <line
                             x1={actX}
-                            y1={actY + 12}
+                            y1={actY + 10}
                             x2={actX}
                             y2={getY(hourlyData[dataIndex].hr)}
                             stroke="#0E7490"
@@ -648,7 +599,7 @@ export const Dashboard: React.FC = () => {
                             cx={actX}
                             cy={actY}
                             r="11"
-                            className="fill-white stroke-stone-300 stroke-1.5 shadow-xs group-hover:scale-110 transition-transform"
+                            className="fill-white stroke-stone-300 stroke-1.5 shadow-xs"
                           />
                           <text
                             x={actX}
@@ -660,9 +611,7 @@ export const Dashboard: React.FC = () => {
                               ? '☕'
                               : act.category === 'olahraga'
                                 ? '🏃'
-                                : act.category === 'makan'
-                                  ? '🍲'
-                                  : '📝'}
+                                : '🍲'}
                           </text>
                         </g>
                       )
@@ -670,130 +619,311 @@ export const Dashboard: React.FC = () => {
                 </svg>
               </div>
 
-              {/* Integrated Lifestyle Event Feed */}
-              <div className="pt-4 border-t border-stone-100 space-y-3">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold text-slate-700 uppercase tracking-wider">
-                    Korelasi Catatan Hari Ini ({activities.length})
-                  </span>
-                  <span className="text-xs text-slate-500">Urutan Kronologis</span>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                  {activities.map((act) => (
-                    <div
-                      key={act.id}
-                      className="p-3 bg-stone-50/70 border border-stone-200/80 rounded-2xl flex items-center gap-2.5"
+              {/* Quick Logger Strip */}
+              <div className="pt-3 border-t border-stone-100 flex items-center justify-between flex-wrap gap-2">
+                <span className="text-xs font-bold text-slate-700">Catat Cepat:</span>
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  {categories.map((cat) => (
+                    <Button
+                      key={cat.key}
+                      size="sm"
+                      variant="outline"
+                      onPress={() => {
+                        setSelectedLogCategory(cat.key)
+                        setIsLogModalOpen(true)
+                      }}
+                      className="px-2.5 py-1 rounded-full text-xs font-medium border-stone-200 hover:border-teal-700 hover:bg-teal-50/40"
                     >
-                      <span className="text-lg">{categories.find((c) => c.key === act.category)?.icon}</span>
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-center justify-between">
-                          <h4 className="text-xs font-bold text-slate-900 truncate">{act.title}</h4>
-                          <span className="text-xs text-slate-500 shrink-0">{act.time}</span>
-                        </div>
-                        <p className="text-xs text-slate-500 truncate">{act.detail}</p>
-                      </div>
-                    </div>
+                      <span className="mr-1">{cat.icon}</span>
+                      {cat.label}
+                    </Button>
                   ))}
                 </div>
               </div>
             </Card>
-          </div>
 
-          {/* RIGHT: 4 Columns - Lifestyle Check-In & Human Clinical Advisory Note */}
-          <div className="lg:col-span-4 space-y-6">
-            {/* Lifestyle Quick Logger Card */}
-            <Card className="bg-white rounded-3xl p-6 border border-stone-200/90 shadow-[0_4px_24px_-4px_rgba(0,0,0,0.03)] space-y-4">
-              <div>
-                <h3 className="text-sm font-bold text-slate-900 tracking-tight">
-                  Catat Aktivitas Cepat
-                </h3>
-                <p className="text-xs text-slate-500 mt-0.5">
-                  Satu ketukan untuk mengaitkan kebiasaan dengan kurva fisiologis.
-                </p>
-              </div>
-
-              {/* 6 Category Buttons */}
-              <div className="grid grid-cols-3 gap-2">
-                {categories.map((cat) => (
-                  <Button
-                    key={cat.key}
-                    variant="outline"
-                    onPress={() => {
-                      setSelectedLogCategory(cat.key)
-                      setIsLogModalOpen(true)
-                    }}
-                    className="p-2.5 h-auto rounded-xl border border-stone-200 hover:border-teal-700 hover:bg-teal-50/40 text-center transition flex flex-col items-center gap-1 active:scale-95 group cursor-pointer"
-                  >
-                    <span className="text-lg group-hover:scale-110 transition-transform">
-                      {cat.icon}
-                    </span>
-                    <span className="text-xs font-bold text-slate-700 group-hover:text-teal-900">
-                      {cat.label}
-                    </span>
-                  </Button>
-                ))}
-              </div>
-            </Card>
-
-            {/* Editorial Health Advisory Note (Warm, Human, Calm - NO generic neon AI gradient) */}
-            <Card className="bg-[#FCFBF8] rounded-3xl p-6 border border-stone-200/90 shadow-[0_4px_24px_-4px_rgba(0,0,0,0.03)] space-y-4">
-              <div className="flex items-center justify-between border-b border-stone-200/60 pb-3">
-                <div className="flex items-center gap-2">
-                  <span className="w-6 h-6 rounded-lg bg-teal-800 text-white flex items-center justify-center font-bold text-xs">
-                    N
-                  </span>
-                  <h3 className="text-xs font-bold text-slate-900 uppercase tracking-wide">
-                    Catatan Pendamping Sehat
-                  </h3>
+            {/* ROW 3: THREE ANALYTICAL CARDS (Exact match to Visits, Workload, Reviews in reference!) */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              {/* Card 1: Activity Breakdown (Donut Ring Chart like "Visits") */}
+              <Card className="p-4 sm:p-5 rounded-2xl bg-white border border-stone-200/90 shadow-xs space-y-3">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-xs font-bold text-slate-700">Porsi Aktivitas</h3>
+                  <span className="text-xs text-stone-400 font-mono">↗</span>
                 </div>
-                <Chip size="sm" color="accent" variant="soft" className="font-semibold text-xs">
-                  Analisis Konteks
-                </Chip>
+
+                <div className="flex items-center justify-center py-1">
+                  <div className="relative w-28 h-28 flex items-center justify-center">
+                    <svg viewBox="0 0 36 36" className="w-28 h-28 -rotate-90">
+                      {/* Ring 1 (Istirahat 45%) */}
+                      <circle
+                        cx="18"
+                        cy="18"
+                        r="15.915"
+                        fill="none"
+                        stroke="#0D9488"
+                        strokeWidth="4"
+                        strokeDasharray="45 55"
+                        strokeDashoffset="0"
+                      />
+                      {/* Ring 2 (Olahraga 35%) */}
+                      <circle
+                        cx="18"
+                        cy="18"
+                        r="15.915"
+                        fill="none"
+                        stroke="#0284C7"
+                        strokeWidth="4"
+                        strokeDasharray="35 65"
+                        strokeDashoffset="-45"
+                      />
+                      {/* Ring 3 (Konsumsi 20%) */}
+                      <circle
+                        cx="18"
+                        cy="18"
+                        r="15.915"
+                        fill="none"
+                        stroke="#F59E0B"
+                        strokeWidth="4"
+                        strokeDasharray="20 80"
+                        strokeDashoffset="-80"
+                      />
+                    </svg>
+                    <div className="absolute flex flex-col items-center">
+                      <span className="text-xs font-extrabold text-slate-900">100%</span>
+                      <span className="text-xs text-slate-500">Tercatat</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-center gap-3 text-xs text-slate-600 pt-1">
+                  <span className="flex items-center gap-1">
+                    <span className="w-2 h-2 rounded-full bg-teal-600 inline-block" /> Istirahat
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <span className="w-2 h-2 rounded-full bg-sky-600 inline-block" /> Olahraga
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <span className="w-2 h-2 rounded-full bg-amber-500 inline-block" /> Kafein
+                  </span>
+                </div>
+              </Card>
+
+              {/* Card 2: Weekly Workload / Trend (Bar Chart like "Workload") */}
+              <Card className="p-4 sm:p-5 rounded-2xl bg-white border border-stone-200/90 shadow-xs space-y-3">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-xs font-bold text-slate-700">Denyut Mingguan</h3>
+                  <span className="text-xs text-stone-400 font-mono">↗</span>
+                </div>
+
+                {/* Vertical Bars for 7 days */}
+                <div className="h-28 flex items-end justify-between gap-1.5 pt-4 px-1">
+                  {[
+                    { day: 'Sen', val: 70, height: '60%' },
+                    { day: 'Sel', val: 73, height: '70%' },
+                    { day: 'Rab', val: 71, height: '65%' },
+                    { day: 'Kam', val: 78, height: '90%', highlight: true },
+                    { day: 'Jum', val: 72, height: '68%' },
+                    { day: 'Sab', val: 68, height: '55%' },
+                    { day: 'Min', val: 71, height: '65%' },
+                  ].map((item) => (
+                    <div key={item.day} className="flex-1 flex flex-col items-center gap-1">
+                      <div className="w-full bg-stone-100 rounded-t-lg h-20 flex items-end justify-center p-0.5">
+                        <div
+                          style={{ height: item.height }}
+                          className={`w-full rounded-t-md transition-all ${
+                            item.highlight ? 'bg-teal-800' : 'bg-teal-500/70'
+                          }`}
+                        />
+                      </div>
+                      <span className="text-xs font-semibold text-slate-500">{item.day}</span>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="text-center text-xs text-slate-500 pt-1">
+                  Rata-rata: <strong className="text-slate-800">71.8 BPM</strong>
+                </div>
+              </Card>
+
+              {/* Card 3: Health Score Gauge (Semicircle Speedometer like "Your reviews") */}
+              <Card className="p-4 sm:p-5 rounded-2xl bg-white border border-stone-200/90 shadow-xs space-y-3">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-xs font-bold text-slate-700">Skor Pemulihan</h3>
+                  <span className="text-xs text-stone-400 font-mono">↗</span>
+                </div>
+
+                <div className="flex flex-col items-center justify-center py-1">
+                  <div className="relative w-28 h-16 overflow-hidden flex items-end justify-center">
+                    <svg viewBox="0 0 100 55" className="w-28 h-16">
+                      {/* Background arc */}
+                      <path
+                        d="M 10 50 A 40 40 0 0 1 90 50"
+                        fill="none"
+                        stroke="#E7E5E4"
+                        strokeWidth="8"
+                        strokeLinecap="round"
+                      />
+                      {/* Active score arc (85%) */}
+                      <path
+                        d="M 10 50 A 40 40 0 0 1 78 22"
+                        fill="none"
+                        stroke="#0D9488"
+                        strokeWidth="8"
+                        strokeLinecap="round"
+                      />
+                    </svg>
+                    <div className="absolute bottom-0 text-center">
+                      <span className="text-xl font-extrabold text-slate-900 block leading-none">
+                        85%
+                      </span>
+                    </div>
+                  </div>
+                  <span className="text-xs font-bold text-teal-800 mt-1">Kondisi Prima</span>
+                </div>
+
+                <div className="text-center text-xs text-slate-500 pt-1 border-t border-stone-100">
+                  Zona Pemulihan Otonom Baik
+                </div>
+              </Card>
+            </div>
+          </div>
+
+          {/* RIGHT COLUMN: SAHABAT SEHAT AI CHATBOT (4 COLS) - Matching the tall gradient card from reference */}
+          <div className="lg:col-span-4">
+            <Card className="bg-gradient-to-b from-teal-800 via-teal-900 to-slate-950 text-white rounded-[2rem] p-5 sm:p-6 shadow-xl border border-teal-700/40 relative overflow-hidden flex flex-col justify-between min-h-[720px] space-y-5">
+              {/* Chatbot Header */}
+              <div className="space-y-3 pb-3 border-b border-white/10">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-8 h-8 rounded-xl bg-teal-400 text-teal-950 flex items-center justify-center font-bold text-xs shadow-xs">
+                      AI
+                    </div>
+                    <div>
+                      <h2 className="text-sm font-bold text-white tracking-tight leading-tight">
+                        Sahabat Sehat AI
+                      </h2>
+                      <p className="text-xs text-teal-200/90">Konsultan Wellness Anda</p>
+                    </div>
+                  </div>
+
+                  <Chip size="sm" color="success" variant="soft" className="text-xs font-bold bg-emerald-400/20 text-emerald-300 border-emerald-400/30">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse inline-block mr-1" />
+                    Online
+                  </Chip>
+                </div>
+
+                {/* Mini Summary Capsule (matching the calendar day selector style in ref) */}
+                <div className="p-2.5 rounded-xl bg-white/10 backdrop-blur-xs border border-white/10 flex items-center justify-between text-xs">
+                  <span className="text-stone-300">Status Hari Ini:</span>
+                  <span className="font-bold text-teal-300">72 BPM (Stabil)</span>
+                </div>
               </div>
 
-              {/* Contextual Alert for Coffee Spike */}
-              <Alert status="warning" className="rounded-2xl border border-amber-200 bg-amber-50/60">
-                <Alert.Indicator />
-                <Alert.Content>
-                  <Alert.Title className="text-xs font-bold text-amber-950">
-                    Respon Fisiologis Kafein Terdeteksi
-                  </Alert.Title>
-                  <Alert.Description className="text-xs text-amber-900/90 mt-0.5 leading-relaxed">
-                    Detak jantung sempat naik ke <strong>84 BPM</strong> pada 10:00 WIB (+15 BPM di atas baseline), bertepatan 45 menit setelah Anda mencatat 1 cangkir kopi hitam.
-                  </Alert.Description>
-                </Alert.Content>
-              </Alert>
+              {/* Chat Messages Body */}
+              <div className="flex-1 overflow-y-auto space-y-3.5 pr-1 max-h-[440px] text-xs">
+                {chatMessages.map((msg) => (
+                  <div
+                    key={msg.id}
+                    className={`flex flex-col ${
+                      msg.sender === 'user' ? 'items-end' : 'items-start'
+                    }`}
+                  >
+                    <div
+                      className={`max-w-[85%] p-3 rounded-2xl leading-relaxed ${
+                        msg.sender === 'user'
+                          ? 'bg-teal-400 text-teal-950 font-semibold rounded-br-xs shadow-xs'
+                          : 'bg-white/12 text-stone-100 rounded-bl-xs border border-white/10'
+                      }`}
+                    >
+                      {msg.text}
+                    </div>
+                    <span className="text-xs text-stone-400 mt-1 px-1">
+                      {msg.sender === 'user' ? 'Anda' : 'Sahabat AI'} &middot; {msg.time}
+                    </span>
+                  </div>
+                ))}
 
-              {/* Reassuring Clinical Guidance */}
-              <p className="text-xs text-slate-700 leading-relaxed font-normal bg-white/80 p-3.5 rounded-2xl border border-stone-200/60">
-                &ldquo;Pola ini merupakan respon normal sistem kardiovaskular terhadap kafein. Pada pukul 11:00 WIB, ritme denyut telah berangsur turun ke 76 BPM dan HRV Anda tetap berada dalam ambang pemulihan optimal.&rdquo;
-              </p>
+                {isAiTyping && (
+                  <div className="flex items-center gap-1.5 p-3 rounded-2xl bg-white/10 text-teal-200 w-fit">
+                    <span className="w-2 h-2 rounded-full bg-teal-300 animate-pulse" />
+                    <span className="w-2 h-2 rounded-full bg-teal-300 animate-pulse [animation-delay:0.2s]" />
+                    <span className="w-2 h-2 rounded-full bg-teal-300 animate-pulse [animation-delay:0.4s]" />
+                  </div>
+                )}
+                <div ref={chatBottomRef} />
+              </div>
 
-              {/* Consultation Action */}
-              <Button
-                variant="outline"
-                size="sm"
-                className="w-full py-2.5 rounded-xl border-stone-300 text-slate-800 hover:bg-stone-100 text-xs font-bold transition shadow-xs"
-              >
-                Tanyakan Pola Tren ke Pendamping Sehat
-              </Button>
+              {/* Chat Quick Suggestions & Input */}
+              <div className="space-y-3 pt-3 border-t border-white/10">
+                {/* Quick Prompts */}
+                <div className="flex items-center gap-1.5 overflow-x-auto pb-1 text-xs">
+                  <button
+                    type="button"
+                    onClick={() => handleSendMessage('Berapa baseline normal saya?')}
+                    className="px-2.5 py-1 rounded-full bg-white/10 hover:bg-white/20 text-teal-200 whitespace-nowrap transition cursor-pointer"
+                  >
+                    Berapa baseline normal?
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleSendMessage('Tips latihan pernapasan')}
+                    className="px-2.5 py-1 rounded-full bg-white/10 hover:bg-white/20 text-teal-200 whitespace-nowrap transition cursor-pointer"
+                  >
+                    Tips relaksasi
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleSendMessage('Pengaruh kafein hari ini')}
+                    className="px-2.5 py-1 rounded-full bg-white/10 hover:bg-white/20 text-teal-200 whitespace-nowrap transition cursor-pointer"
+                  >
+                    Pengaruh kopi
+                  </button>
+                </div>
+
+                {/* Input form */}
+                <form
+                  onSubmit={(e) => {
+                    e.preventDefault()
+                    handleSendMessage()
+                  }}
+                  className="flex items-center gap-2"
+                >
+                  <input
+                    type="text"
+                    placeholder="Tanya kesehatanmu ke AI..."
+                    value={inputMessage}
+                    onChange={(e) => setInputMessage(e.target.value)}
+                    className="flex-1 px-3.5 py-2.5 rounded-xl bg-white/15 border border-white/20 text-white placeholder:text-stone-400 text-xs focus:outline-none focus:ring-2 focus:ring-teal-400/50"
+                  />
+                  <button
+                    type="submit"
+                    disabled={!inputMessage.trim()}
+                    className="p-2.5 rounded-xl bg-teal-400 hover:bg-teal-300 text-teal-950 font-bold transition disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer shrink-0"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                    </svg>
+                  </button>
+                </form>
+              </div>
             </Card>
           </div>
-        </section>
-      </main>
+        </div>
 
-      {/* 5. PERSISTENT MEDICAL DISCLAIMER FOOTER */}
-      <footer className="max-w-6xl w-full mx-auto px-4 sm:px-8 py-8 text-center text-xs text-slate-500 space-y-2 border-t border-stone-200/70 mt-8">
-        <p className="text-slate-600 font-medium">
-          <strong>Pernyataan Non-Medis:</strong> Nadiku adalah platform pemantauan kebugaran dan wellness berbasis rPPG & ML Anomaly Detection. Hasil pengukuran bersifat informasional dan tidak menggantikan diagnosis, pemeriksaan medis klinis, atau konsultasi dokter.
-        </p>
-        <p className="text-xs text-stone-500">
-          Nadiku &copy; 2026 &middot; Didesain dengan prinsip ketenangan dan kepedulian keluarga.
-        </p>
-      </footer>
+        {/* 3. PERSISTENT DISCLAIMER FOOTER */}
+        <footer className="pt-4 border-t border-stone-100 text-center text-xs text-slate-500 space-y-1">
+          <p className="text-slate-600 font-medium">
+            <strong>Pernyataan Non-Medis:</strong> Nadiku adalah platform pemantauan kebugaran dan
+            wellness berbasis rPPG & ML Anomaly Detection. Hasil pengukuran bersifat informasional dan
+            tidak menggantikan diagnosis, pemeriksaan medis klinis, atau konsultasi dokter.
+          </p>
+          <p className="text-slate-400">
+            Nadiku &copy; 2026 &middot; Didesain dengan prinsip ketenangan dan kepedulian keluarga.
+          </p>
+        </footer>
+      </div>
 
-      {/* QUICK LOG MODAL WITH HEROUI MODAL */}
+      {/* QUICK LOG MODAL */}
       <Modal isOpen={isLogModalOpen} onOpenChange={setIsLogModalOpen}>
         <Modal.Backdrop className="bg-slate-900/50 backdrop-blur-xs fixed inset-0 z-50 flex items-center justify-center p-4">
           <Modal.Container className="w-full max-w-md">
