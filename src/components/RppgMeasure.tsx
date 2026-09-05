@@ -283,23 +283,28 @@ export const RppgMeasure: React.FC = () => {
             </p>
           </div>
         ) : (
-          <video
-            ref={videoRef}
-            autoPlay
-            playsInline
-            muted
-            className="absolute inset-0 w-full h-full object-contain -scale-x-100"
-          />
-        )}
+          // Video dibungkus kotak shrink-to-fit: bingkai oval jadi berada di
+          // ruang koordinat yang sama dengan gambar, bukan dengan container
+          // yang menyisakan bilah hitam.
+          <div className="absolute inset-0 flex items-center justify-center">
+            <div className="relative max-w-full max-h-full">
+              <video
+                ref={videoRef}
+                autoPlay
+                playsInline
+                muted
+                className="block max-w-full max-h-full -scale-x-100"
+              />
 
-        {/* Bingkai oval sebagai panduan posisi wajah */}
-        {!cameraError && (
-          <div className="absolute inset-0 flex items-start justify-center pt-[8%] pointer-events-none">
-            <div
-              className={`w-[46%] max-w-64 aspect-3/4 border-2 border-dashed rounded-[50%] transition-colors ${
-                isRecording ? 'border-emerald-400' : 'border-clay-400/70 animate-pulse'
-              }`}
-            />
+              {/* Panduan posisi wajah, di tengah bidang kamera */}
+              <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                <div
+                  className={`h-[72%] aspect-3/4 border-2 border-dashed rounded-[50%] transition-colors ${
+                    isRecording ? 'border-emerald-400' : 'border-clay-400/70 animate-pulse'
+                  }`}
+                />
+              </div>
+            </div>
           </div>
         )}
 

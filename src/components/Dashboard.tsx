@@ -590,7 +590,16 @@ export const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
                     </p>
                   </div>
 
-                  <div className="flex items-center gap-2 self-start sm:self-auto">
+                  <div className="flex flex-wrap items-center gap-2 self-start sm:self-auto">
+                    <Button
+                      onClick={() => goTo('rppg')}
+                      className="h-10 px-5 rounded-full text-sm font-bold bg-clay-600 hover:bg-clay-700 text-white shadow-xs hover:shadow-md transition-all cursor-pointer flex items-center gap-2 order-first sm:order-last"
+                    >
+                      <Video className="w-4 h-4" />
+                      Mulai Ukur BPM
+                      <ArrowUpRight className="w-4 h-4" />
+                    </Button>
+
                     {isLoading && (
                       <Chip size="sm" color="neutral" variant="soft" className="font-semibold text-xs">
                         Memuat data…
@@ -658,7 +667,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
                 </div>
 
                 {/* ROW: 4 DEFINED KEY METRIC CARDS (FOLLOWING REFERENCE IMAGE STYLE) */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                   {metricCards.map((card) => (
                     <Card
                       key={card.label}
@@ -711,44 +720,6 @@ export const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
                     </Card>
                   ))}
 
-                  {/* Card 4: TOMBOL CTA MULAI UKUR rPPG (Sesuai Posisi & Ukuran Sketsa User) */}
-                  <Card
-                    onClick={() => {
-                      goTo('rppg')
-                    }}
-                    role="button"
-                    tabIndex={0}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter' || e.key === ' ') goTo('rppg')
-                    }}
-                    className="p-5 rounded-2xl bg-clay-600 hover:bg-clay-700 text-white border border-clay-500 shadow-xs hover:shadow-lg active:scale-[0.99] transition-all cursor-pointer flex flex-col justify-between group select-none space-y-3"
-                  >
-                    <div className="flex items-center justify-between">
-                      <div className="w-10 h-10 rounded-xl bg-white/20 border border-white/25 flex items-center justify-center text-white shrink-0 group-hover:scale-110 transition-transform">
-                        <Video className="w-5 h-5 text-white" />
-                      </div>
-                      
-                    </div>
-
-                    <div className="text-left py-0.5">
-                      <span className="text-[11px] font-semibold text-clay-200 block uppercase tracking-wider">
-                        Sensor Optik Kamera
-                      </span>
-                      <h3 className="text-xl font-extrabold text-white tracking-tight leading-tight mt-0.5 group-hover:text-clay-100 transition-colors">
-                        Mulai Ukur BPM
-                      </h3>
-                      <p className="text-xs text-clay-100/85 mt-1">
-                        Pindai detak jantung & vital via webcam
-                      </p>
-                    </div>
-
-                    <div className="pt-2 border-t border-white/20 flex items-center justify-between text-xs font-bold text-white">
-                      <span className="flex items-center gap-1.5 text-clay-100 group-hover:text-white">
-                        Buka Kamera Sekarang
-                      </span>
-                      <ArrowUpRight className="w-4 h-4 text-white group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
-                    </div>
-                  </Card>
                 </div>
               </div>
 
