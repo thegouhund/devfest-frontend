@@ -247,7 +247,7 @@ export const FamilyMonitoring: React.FC<FamilyMonitoringProps> = ({
   return (
     <div className="space-y-6 w-full animate-in fade-in duration-200">
       {/* 1. TOP HEADER & SUMMARY CONTEXT */}
-      <div className="bg-gradient-to-br from-stone-50/90 via-white to-teal-50/40 border border-stone-200/90 rounded-3xl p-6 sm:p-7 shadow-xs">
+      <div className="bg-gradient-to-br from-stone-50/80 via-white to-teal-50/30 border border-stone-200/80 rounded-3xl p-6 sm:p-7 shadow-xs">
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
           <div className="space-y-2 max-w-2xl text-left">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-teal-100/70 border border-teal-200/80 text-teal-900 text-xs font-bold">
@@ -381,10 +381,10 @@ export const FamilyMonitoring: React.FC<FamilyMonitoringProps> = ({
           return (
             <Card
               key={member.id}
-              className={`p-5 sm:p-6 rounded-3xl bg-white border transition-all duration-200 shadow-xs space-y-4 hover:shadow-md ${
+              className={`p-5 sm:p-6 rounded-3xl bg-white border transition-shadow duration-200 space-y-4 shadow-sm hover:shadow ${
                 isWarning
-                  ? 'border-amber-300/90 ring-1 ring-amber-200/60 bg-amber-50/10'
-                  : 'border-stone-200/90'
+                  ? 'border-amber-300/80 ring-1 ring-amber-200/50 bg-amber-50/10'
+                  : 'border-stone-200/80'
               }`}
             >
               {/* MEMBER HEADER BAR */}
@@ -448,12 +448,12 @@ export const FamilyMonitoring: React.FC<FamilyMonitoringProps> = ({
               */}
               <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-stretch">
                 {/* ZONE 1: WIDE HORIZONTAL BOX (MUI LINECHART TREND) */}
-                <div className="lg:col-span-7 bg-stone-50/60 border border-stone-200/80 rounded-2xl p-4 flex flex-col justify-between space-y-3">
+                <div className="lg:col-span-7 bg-stone-50/50 border border-stone-200/70 rounded-2xl p-4 flex flex-col justify-between space-y-3">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                     <div>
                       <span className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
                         <Activity className="w-3.5 h-3.5 text-teal-700" />
-                        Dinamika Vital Sign Hari Ini (MUI LineChart)
+                        Dinamika Vital Sign Hari Ini
                       </span>
                       <p className="text-[11px] text-slate-500 mt-0.5">
                         Tren fluktuasi denyut per jam & korelasi ritme otonom
@@ -571,7 +571,7 @@ export const FamilyMonitoring: React.FC<FamilyMonitoringProps> = ({
                 </div>
 
                 {/* ZONE 2: TALL VERTICAL BOX (PRIMARY METRIC: HEART RATE BPM) */}
-                <div className="lg:col-span-2 bg-gradient-to-b from-white via-white to-stone-50 border border-stone-200/80 rounded-2xl p-4 flex flex-col items-center justify-between text-center space-y-2 shadow-2xs">
+                <div className="lg:col-span-2 bg-gradient-to-b from-white to-stone-50/40 border border-stone-200/70 rounded-2xl p-4 flex flex-col items-center justify-between text-center space-y-2">
                   <div className="w-full flex items-center justify-between">
                     <span className="text-xs font-bold text-slate-700">Detak Jantung</span>
                     <div className="w-7 h-7 rounded-full bg-rose-50 border border-rose-100 flex items-center justify-center">
@@ -606,7 +606,7 @@ export const FamilyMonitoring: React.FC<FamilyMonitoringProps> = ({
                 {/* ZONE 3: TWO STACKED HORIZONTAL BOXES (HRV & RESPIRATION) */}
                 <div className="lg:col-span-3 flex flex-col gap-3 justify-between">
                   {/* Top Box: Variabilitas HRV */}
-                  <div className="flex-1 bg-white border border-stone-200/80 rounded-2xl p-3.5 flex flex-col justify-between shadow-2xs">
+                  <div className="flex-1 bg-white border border-stone-200/70 rounded-2xl p-3.5 flex flex-col justify-between">
                     <div className="flex items-center justify-between">
                       <span className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
                         <Activity className="w-3.5 h-3.5 text-sky-600" />
@@ -636,7 +636,7 @@ export const FamilyMonitoring: React.FC<FamilyMonitoringProps> = ({
                   </div>
 
                   {/* Bottom Box: Laju Pernapasan (RR) */}
-                  <div className="flex-1 bg-white border border-stone-200/80 rounded-2xl p-3.5 flex flex-col justify-between shadow-2xs">
+                  <div className="flex-1 bg-white border border-stone-200/70 rounded-2xl p-3.5 flex flex-col justify-between">
                     <div className="flex items-center justify-between">
                       <span className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
                         <Wind className="w-3.5 h-3.5 text-teal-600" />

@@ -308,7 +308,7 @@ export const Dashboard: React.FC = () => {
           </div>
 
           {/* HERO BANNER CARD WITH ILLUSTRATION (FULL WIDTH AT TOP) */}
-          <Card className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-teal-50/70 via-white to-stone-50/50 border border-teal-100/90 p-5 sm:p-6 shadow-xs w-full">
+          <Card className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-teal-50/70 via-white to-stone-50/50 border border-teal-100/90 p-5 sm:p-6 shadow-md shadow-teal-900/5 w-full">
             <div className="flex flex-col md:flex-row items-center justify-between gap-6">
               <div className="space-y-3 z-10 max-w-xl text-left">
                 <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-teal-100/70 border border-teal-200/80 text-teal-900 text-xs font-bold">
@@ -370,7 +370,7 @@ export const Dashboard: React.FC = () => {
               {/* ROW 1: 3 VITAL METRIC SUMMARY CARDS (Like Consultations, Satisfaction, Revenue in ref) */}
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               {/* Metric 1: Heart Rate */}
-              <Card className="p-5 rounded-2xl bg-white border border-stone-200/90 shadow-xs space-y-3 relative">
+              <Card className="p-5 rounded-2xl bg-white border border-stone-200/90 shadow-md shadow-stone-200/50 hover:shadow-lg transition-shadow space-y-3 relative">
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-bold text-slate-600">Detak Jantung</span>
                   <span className="text-xs text-stone-400 font-mono">↗</span>
@@ -388,7 +388,7 @@ export const Dashboard: React.FC = () => {
               </Card>
 
               {/* Metric 2: HRV RMSSD */}
-              <Card className="p-5 rounded-2xl bg-white border border-stone-200/90 shadow-xs space-y-3 relative">
+              <Card className="p-5 rounded-2xl bg-white border border-stone-200/90 shadow-md shadow-stone-200/50 hover:shadow-lg transition-shadow space-y-3 relative">
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-bold text-slate-600">Variabilitas (HRV)</span>
                   <span className="text-xs text-stone-400 font-mono">↗</span>
@@ -406,7 +406,7 @@ export const Dashboard: React.FC = () => {
               </Card>
 
               {/* Metric 3: Respiration Rate */}
-              <Card className="p-5 rounded-2xl bg-white border border-stone-200/90 shadow-xs space-y-3 relative">
+              <Card className="p-5 rounded-2xl bg-white border border-stone-200/90 shadow-md shadow-stone-200/50 hover:shadow-lg transition-shadow space-y-3 relative">
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-bold text-slate-600">Laju Pernapasan</span>
                   <span className="text-xs text-stone-400 font-mono">↗</span>
@@ -425,7 +425,7 @@ export const Dashboard: React.FC = () => {
             </div>
 
             {/* ROW 2: PROMINENT TIME-SERIES TREND CARD (Like Current Patients section in ref) */}
-            <Card className="p-5 sm:p-6 rounded-3xl bg-white border border-stone-200/90 shadow-xs space-y-4">
+            <Card className="p-5 sm:p-6 rounded-3xl bg-white border border-stone-200/90 shadow-md shadow-stone-200/50 space-y-4">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-stone-100">
                 <div>
                   <h2 className="text-base font-bold text-slate-900 tracking-tight">
@@ -660,7 +660,7 @@ export const Dashboard: React.FC = () => {
           {/* RIGHT COLUMN: 3 ANALYTICAL CARDS (4 COLS) */}
           <div className="lg:col-span-4 space-y-5">
             {/* Card 1: Activity Breakdown (Donut Ring Chart like "Visits") */}
-            <Card className="p-5 sm:p-6 rounded-3xl bg-white border border-stone-200/90 shadow-xs space-y-3">
+            <Card className="p-5 sm:p-6 rounded-3xl bg-white border border-stone-200/90 shadow-md shadow-stone-200/50 hover:shadow-lg transition-shadow space-y-3">
               <div className="flex items-center justify-between">
                 <h3 className="text-xs font-bold text-slate-700">Porsi Aktivitas</h3>
                 <span className="text-xs text-stone-400 font-mono">↗</span>
@@ -724,7 +724,7 @@ export const Dashboard: React.FC = () => {
             </Card>
 
             {/* Card 2: Weekly Workload / Trend (Bar Chart like "Workload") */}
-            <Card className="p-5 sm:p-6 rounded-3xl bg-white border border-stone-200/90 shadow-xs space-y-3">
+            <Card className="p-5 sm:p-6 rounded-3xl bg-white border border-stone-200/90 shadow-md shadow-stone-200/50 hover:shadow-lg transition-shadow space-y-3">
               <div className="flex items-center justify-between">
                 <h3 className="text-xs font-bold text-slate-700">Denyut Mingguan</h3>
                 <span className="text-xs text-stone-400 font-mono">↗</span>
@@ -761,7 +761,7 @@ export const Dashboard: React.FC = () => {
             </Card>
 
             {/* Card 3: Health Score Gauge (Semicircle Speedometer like "Your reviews") */}
-            <Card className="p-5 sm:p-6 rounded-3xl bg-white border border-stone-200/90 shadow-xs space-y-3">
+            <Card className="p-5 sm:p-6 rounded-3xl bg-white border border-stone-200/90 shadow-md shadow-stone-200/50 hover:shadow-lg transition-shadow space-y-3">
               <div className="flex items-center justify-between">
                 <h3 className="text-xs font-bold text-slate-700">Skor Pemulihan</h3>
                 <span className="text-xs text-stone-400 font-mono">↗</span>
