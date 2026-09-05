@@ -95,12 +95,12 @@ export const Dashboard: React.FC = () => {
     timeRange === 'harian' ? hourlyData : timeRange === 'mingguan' ? weeklyData : monthlyData
 
   // SVG Chart Geometry
-  const svgWidth = 800
-  const svgHeight = 260
-  const padLeft = 45
-  const padRight = 35
-  const padTop = 30
-  const padBottom = 40
+  const svgWidth = 760
+  const svgHeight = 240
+  const padLeft = 40
+  const padRight = 30
+  const padTop = 25
+  const padBottom = 35
   const plotWidth = svgWidth - padLeft - padRight
   const plotHeight = svgHeight - padTop - padBottom
 
@@ -153,13 +153,13 @@ export const Dashboard: React.FC = () => {
   return (
     <div className="min-h-screen bg-[#F6F4EE] text-slate-900 flex flex-col font-sans antialiased">
       {/* 1. TOP BAR NAVIGATION */}
-      <nav className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-stone-200/90 px-4 sm:px-8 py-3.5 shadow-[0_1px_3px_0_rgba(0,0,0,0.02)]">
+      <nav className="sticky top-0 z-40 bg-white/90 backdrop-blur-md border-b border-stone-200/80 px-4 sm:px-8 py-3">
         <div className="max-w-6xl w-full mx-auto flex items-center justify-between">
-          {/* Brand Logo */}
+          {/* Brand Logo & Clinical Monogram */}
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-teal-800 text-white flex items-center justify-center font-bold shadow-xs">
+            <div className="w-8 h-8 rounded-xl bg-teal-800 text-white flex items-center justify-center font-bold shadow-xs">
               <svg
-                className="w-5 h-5 text-white"
+                className="w-4 h-4 text-white"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -177,19 +177,17 @@ export const Dashboard: React.FC = () => {
                 Nadiku
               </span>
               <span className="text-xs text-teal-800 font-semibold tracking-wide uppercase">
-                Family Health Monitor
+                Family Health Sanctuary
               </span>
             </div>
           </div>
 
           {/* Navigation Links with HeroUI Buttons */}
-          <div className="hidden md:flex items-center gap-1 bg-stone-100/70 p-1 rounded-full border border-stone-200/70">
+          <div className="hidden md:flex items-center gap-1 bg-stone-100/80 p-1 rounded-full border border-stone-200/60">
             {[
-              { id: 'dashboard', label: 'Dashboard' },
+              { id: 'dashboard', label: 'Ringkasan' },
               { id: 'rppg', label: 'Pengukuran rPPG' },
-              { id: 'history', label: 'Riwayat & Tren' },
-              { id: 'activity', label: 'Aktivitas' },
-              { id: 'ai', label: 'AI Sahabat' },
+              { id: 'history', label: 'Tren Vital' },
               { id: 'family', label: 'Keluarga' },
             ].map((nav) => (
               <Button
@@ -208,20 +206,18 @@ export const Dashboard: React.FC = () => {
             ))}
           </div>
 
-          {/* User Profile & Actions with HeroUI Avatar and Chip */}
+          {/* User Profile & Telegram Status */}
           <div className="flex items-center gap-3">
-            {/* Telegram Status indicator */}
             <Chip
               size="sm"
               color="accent"
               variant="soft"
               className="hidden sm:inline-flex font-semibold text-xs items-center gap-1.5"
             >
-              <span className="w-1.5 h-1.5 rounded-full bg-sky-500 animate-pulse inline-block mr-1" />
-              Telegram Aktif
+              <span className="w-1.5 h-1.5 rounded-full bg-teal-600 animate-pulse inline-block mr-1" />
+              Telegram Bot Aktif
             </Chip>
 
-            {/* Profile Avatar Pill with HeroUI Avatar */}
             <div className="flex items-center gap-2 pl-2 border-l border-stone-200">
               <Avatar size="sm" className="bg-teal-900 text-white font-bold text-xs shadow-xs">
                 <Avatar.Fallback>BP</Avatar.Fallback>
@@ -235,30 +231,33 @@ export const Dashboard: React.FC = () => {
         </div>
       </nav>
 
-      {/* 2. MAIN CONTENT AREA */}
-      <main className="max-w-6xl w-full mx-auto p-4 sm:p-8 space-y-8 flex-1">
-        {/* Header Greeting & Primary Action Card */}
-        <Card className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white rounded-2xl sm:rounded-3xl p-6 sm:p-8 border border-stone-200/90 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.03)]">
+      {/* 2. MAIN SANCTUARY CONTENT */}
+      <main className="max-w-6xl w-full mx-auto px-4 sm:px-8 py-6 sm:py-8 space-y-8 flex-1">
+        {/* Natural Header Flow (Organic, Not a boxed card) */}
+        <header className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 pt-1">
           <div className="space-y-1">
-            <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight">
-              Halo, Budi Pratama 👋
-            </h1>
-            <div className="text-xs sm:text-sm text-slate-600 flex flex-wrap items-center gap-2 font-normal">
-              <span>Pengukuran Terakhir: Hari ini, 08:30 WIB</span>
-              <span className="inline-block w-1.5 h-1.5 rounded-full bg-stone-300" />
-              <Chip size="sm" color="success" variant="soft" className="font-semibold text-xs">
-                Kualitas Sinyal Baik (98%)
-              </Chip>
+            <div className="flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-emerald-600 animate-pulse" />
+              <span className="text-xs font-semibold text-teal-900 uppercase tracking-wider">
+                Kondisi Fisiologis Terkalibrasi
+              </span>
             </div>
+            <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
+              Selamat Pagi, Budi
+            </h1>
+            <p className="text-xs sm:text-sm text-slate-600">
+              Pemeriksaan rPPG terakhir dicatat pukul <strong>08:30 WIB</strong> &middot; Kualitas sinyal 98% (Sangat Baik).
+            </p>
           </div>
 
+          {/* Primary Action Button */}
           <Button
             size="md"
             variant="primary"
-            className="px-6 py-2.5 rounded-full text-xs font-bold bg-slate-900 hover:bg-slate-800 text-white flex items-center gap-2 transition active:scale-95 shadow-xs"
+            className="px-6 py-2.5 rounded-full text-xs font-bold bg-slate-900 hover:bg-slate-800 text-white flex items-center gap-2 transition active:scale-95 shadow-sm shrink-0 self-start sm:self-auto"
           >
             <svg
-              className="w-4 h-4"
+              className="w-4 h-4 text-emerald-400"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -275,553 +274,481 @@ export const Dashboard: React.FC = () => {
                 d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"
               />
             </svg>
-            <span>Mulai Pengukuran Baru</span>
+            <span>Mulai Pengukuran rPPG Baru</span>
           </Button>
-        </Card>
+        </header>
 
-        {/* 3. VITAL SIGNS METRIC CARDS WITH HEROUI CARD & CHIP */}
-        <section className="grid grid-cols-1 md:grid-cols-3 gap-5">
-          {/* Metric 1: Heart Rate */}
-          <Card className="bg-white rounded-2xl p-6 border border-stone-200/90 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.03)] space-y-4 relative overflow-hidden">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <span className="w-8 h-8 rounded-lg bg-rose-50 text-rose-600 flex items-center justify-center">
-                  <svg
-                    className="w-4 h-4"
-                    fill="currentColor"
-                    viewBox="0 0 20 20"
-                  >
-                    <path
-                      fillRule="evenodd"
-                      d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z"
-                      clipRule="evenodd"
-                    />
-                  </svg>
-                </span>
-                <span className="text-xs font-bold text-slate-700 uppercase tracking-wider">
-                  Detak Jantung (HR)
-                </span>
-              </div>
-              <Chip size="sm" color="success" variant="soft" className="font-bold text-xs">
-                Normal
-              </Chip>
-            </div>
-
-            <div className="flex items-baseline gap-2">
-              <span className="text-4xl sm:text-5xl font-extrabold text-slate-900 tracking-tight">
-                72
-              </span>
-              <span className="text-xs font-bold text-slate-500 uppercase">BPM</span>
-            </div>
-
-            <div className="pt-2 border-t border-stone-100 flex items-center justify-between text-xs">
-              <span className="text-slate-500 font-medium">Baseline Personal: 69 BPM</span>
-              <span className="text-emerald-700 font-bold flex items-center gap-0.5">
-                <span>+3% (Stabil)</span>
-              </span>
-            </div>
-          </Card>
-
-          {/* Metric 2: HRV (RMSSD) */}
-          <Card className="bg-white rounded-2xl p-6 border border-stone-200/90 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.03)] space-y-4 relative overflow-hidden">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <span className="w-8 h-8 rounded-lg bg-teal-50 text-teal-700 flex items-center justify-center">
-                  <svg
-                    className="w-4 h-4"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                    strokeWidth="2.2"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      d="M13 10V3L4 14h7v7l9-11h-7z"
-                    />
-                  </svg>
-                </span>
-                <span className="text-xs font-bold text-slate-700 uppercase tracking-wider">
-                  Variabilitas (HRV)
-                </span>
-              </div>
-              <Chip size="sm" color="success" variant="soft" className="font-bold text-xs">
-                Optimal
-              </Chip>
-            </div>
-
-            <div className="flex items-baseline gap-2">
-              <span className="text-4xl sm:text-5xl font-extrabold text-slate-900 tracking-tight">
-                52
-              </span>
-              <span className="text-xs font-bold text-slate-500 uppercase">ms (RMSSD)</span>
-            </div>
-
-            <div className="pt-2 border-t border-stone-100 flex items-center justify-between text-xs">
-              <span className="text-slate-500 font-medium">Pemulihan Saraf: Baik</span>
-              <span className="text-emerald-700 font-bold">Kondisi Prima</span>
-            </div>
-          </Card>
-
-          {/* Metric 3: Respiration Rate */}
-          <Card className="bg-white rounded-2xl p-6 border border-stone-200/90 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.03)] space-y-4 relative overflow-hidden">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <span className="w-8 h-8 rounded-lg bg-sky-50 text-sky-700 flex items-center justify-center">
-                  <svg
-                    className="w-4 h-4"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                    strokeWidth="2.2"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707"
-                    />
-                  </svg>
-                </span>
-                <span className="text-xs font-bold text-slate-700 uppercase tracking-wider">
-                  Laju Pernapasan
-                </span>
-              </div>
-              <Chip size="sm" color="success" variant="soft" className="font-bold text-xs">
-                Rileks
-              </Chip>
-            </div>
-
-            <div className="flex items-baseline gap-2">
-              <span className="text-4xl sm:text-5xl font-extrabold text-slate-900 tracking-tight">
-                16
-              </span>
-              <span className="text-xs font-bold text-slate-500 uppercase">nafas / mnt</span>
-            </div>
-
-            <div className="pt-2 border-t border-stone-100 flex items-center justify-between text-xs">
-              <span className="text-slate-500 font-medium">Rentang Normal: 12-20 bpm</span>
-              <span className="text-slate-700 font-bold">Teratur</span>
-            </div>
-          </Card>
-        </section>
-
-        {/* 4. INTERACTIVE TIME-SERIES TREND CHART WITH ACTIVITY OVERLAY & HEROUI SWITCH */}
-        <Card className="bg-white rounded-2xl sm:rounded-3xl p-6 sm:p-8 border border-stone-200/90 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.03)] space-y-6">
-          {/* Chart Header & Controls */}
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-stone-100">
-            <div>
-              <h2 className="text-lg sm:text-xl font-bold text-slate-900 tracking-tight">
-                Tren & Korelasi Vital Sign
-              </h2>
-              <p className="text-xs text-slate-500 mt-0.5 font-normal">
-                Memvisualisasikan dinamika denyut nadi dengan penanda aktivitas harian Anda.
-              </p>
-            </div>
-
-            <div className="flex flex-wrap items-center gap-4">
-              {/* Activity Marker Toggle with HeroUI Switch */}
-              <Switch
-                isSelected={showActivityOverlay}
-                onChange={setShowActivityOverlay}
-              >
-                <Switch.Control>
-                  <Switch.Thumb />
-                </Switch.Control>
-                <Switch.Content className="text-xs font-semibold text-slate-700">
-                  Penanda Aktivitas
-                </Switch.Content>
-              </Switch>
-
-              {/* Time Range Tabs with HeroUI ButtonGroup */}
-              <ButtonGroup variant="secondary" className="bg-stone-100 p-1 rounded-full text-xs">
-                <Button
-                  size="sm"
-                  variant={timeRange === 'harian' ? 'primary' : 'ghost'}
-                  onPress={() => setTimeRange('harian')}
-                  className={`px-3.5 py-1 rounded-full transition text-xs font-semibold ${
-                    timeRange === 'harian'
-                      ? 'bg-white text-slate-900 shadow-xs font-bold'
-                      : 'text-slate-500 hover:text-slate-800'
-                  }`}
-                >
-                  Harian
-                </Button>
-                <Button
-                  size="sm"
-                  variant={timeRange === 'mingguan' ? 'primary' : 'ghost'}
-                  onPress={() => setTimeRange('mingguan')}
-                  className={`px-3.5 py-1 rounded-full transition text-xs font-semibold ${
-                    timeRange === 'mingguan'
-                      ? 'bg-white text-slate-900 shadow-xs font-bold'
-                      : 'text-slate-500 hover:text-slate-800'
-                  }`}
-                >
-                  Mingguan
-                </Button>
-                <Button
-                  size="sm"
-                  variant={timeRange === 'bulanan' ? 'primary' : 'ghost'}
-                  onPress={() => setTimeRange('bulanan')}
-                  className={`px-3.5 py-1 rounded-full transition text-xs font-semibold ${
-                    timeRange === 'bulanan'
-                      ? 'bg-white text-slate-900 shadow-xs font-bold'
-                      : 'text-slate-500 hover:text-slate-800'
-                  }`}
-                >
-                  Bulanan
-                </Button>
-              </ButtonGroup>
-            </div>
-          </div>
-
-          {/* SVG Canvas */}
-          <div className="w-full overflow-x-auto">
-            <svg
-              viewBox={`0 0 ${svgWidth} ${svgHeight}`}
-              className="w-full min-w-[650px] h-[260px] overflow-visible select-none"
-            >
-              <defs>
-                <linearGradient id="tealAreaGrad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#0E7490" stopOpacity="0.18" />
-                  <stop offset="100%" stopColor="#0E7490" stopOpacity="0.0" />
-                </linearGradient>
-              </defs>
-
-              {/* Grid Horizontal Lines */}
-              {[50, 65, 80, 95].map((hrVal) => {
-                const y = getY(hrVal)
-                return (
-                  <g key={hrVal}>
-                    <line
-                      x1={padLeft}
-                      y1={y}
-                      x2={svgWidth - padRight}
-                      y2={y}
-                      stroke="#F1F0EA"
-                      strokeWidth="1"
-                    />
-                    <text
-                      x={padLeft - 10}
-                      y={y + 4}
-                      textAnchor="end"
-                      className="text-xs font-mono fill-stone-400 font-semibold"
-                    >
-                      {hrVal}
-                    </text>
-                  </g>
-                )
-              })}
-
-              {/* Baseline Reference Dashed Line (69 BPM) */}
-              <line
-                x1={padLeft}
-                y1={getY(69)}
-                x2={svgWidth - padRight}
-                y2={getY(69)}
-                stroke="#10B981"
-                strokeWidth="1.5"
-                strokeDasharray="4 4"
-                strokeOpacity="0.7"
-              />
-              <text
-                x={svgWidth - padRight - 5}
-                y={getY(69) - 6}
-                textAnchor="end"
-                className="text-xs fill-emerald-800 font-bold"
-              >
-                Baseline: 69 BPM
-              </text>
-
-              {/* Filled Area */}
-              <polygon points={areaPoints} fill="url(#tealAreaGrad)" />
-
-              {/* Main Trend Line */}
-              <polyline
-                points={hrPoints}
-                fill="none"
-                stroke="#0E7490"
-                strokeWidth="2.8"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-
-              {/* Data Points & Tooltip Targets */}
-              {currentChartData.map((d, idx) => {
-                const cx = getX(idx)
-                const cy = getY(d.hr)
-                const isHovered = hoveredPointIndex === idx
-                return (
-                  <g
-                    key={idx}
-                    className="cursor-pointer"
-                    onMouseEnter={() => setHoveredPointIndex(idx)}
-                    onMouseLeave={() => setHoveredPointIndex(null)}
-                  >
-                    <circle
-                      cx={cx}
-                      cy={cy}
-                      r={isHovered ? 6 : 4}
-                      className={`transition-all duration-150 ${
-                        isHovered
-                          ? 'fill-teal-900 stroke-white stroke-2'
-                          : 'fill-white stroke-teal-700 stroke-2'
-                      }`}
-                    />
-
-                    {/* Bottom X-Axis Label */}
-                    <text
-                      x={cx}
-                      y={padTop + plotHeight + 20}
-                      textAnchor="middle"
-                      className="text-xs fill-slate-500 font-medium"
-                    >
-                      {d.label}
-                    </text>
-
-                    {/* Hover Tooltip Popup */}
-                    {isHovered && (
-                      <g>
-                        <rect
-                          x={cx - 45}
-                          y={cy - 48}
-                          width="90"
-                          height="36"
-                          rx="8"
-                          className="fill-slate-900 shadow-md"
-                        />
-                        <text
-                          x={cx}
-                          y={cy - 32}
-                          textAnchor="middle"
-                          className="text-xs fill-stone-300 font-medium"
-                        >
-                          {d.time}
-                        </text>
-                        <text
-                          x={cx}
-                          y={cy - 18}
-                          textAnchor="middle"
-                          className="text-xs fill-white font-bold"
-                        >
-                          {d.hr} BPM
-                        </text>
-                      </g>
-                    )}
-                  </g>
-                )
-              })}
-
-              {/* Activity Overlay Markers */}
-              {showActivityOverlay &&
-                timeRange === 'harian' &&
-                activities.map((act) => {
-                  const dataIndex = hourlyData.findIndex(
-                    (d) => Number(d.time.split(':')[0]) === Math.floor(act.timestamp)
-                  )
-                  if (dataIndex === -1) return null
-                  const actX = getX(dataIndex)
-                  const actY = getY(hourlyData[dataIndex].hr) - 26
-
-                  return (
-                    <g key={act.id} className="cursor-pointer group">
-                      <line
-                        x1={actX}
-                        y1={actY + 12}
-                        x2={actX}
-                        y2={getY(hourlyData[dataIndex].hr)}
-                        stroke="#0E7490"
-                        strokeWidth="1.2"
-                        strokeDasharray="2 2"
-                      />
-                      <circle
-                        cx={actX}
-                        cy={actY}
-                        r="12"
-                        className="fill-white stroke-stone-300 stroke-1.5 shadow-xs group-hover:scale-110 transition-transform"
-                      />
-                      <text
-                        x={actX}
-                        y={actY + 4}
-                        textAnchor="middle"
-                        className="text-xs select-none pointer-events-none"
-                      >
-                        {act.category === 'kopi'
-                          ? '☕'
-                          : act.category === 'olahraga'
-                            ? '🏃'
-                            : act.category === 'makan'
-                              ? '🍲'
-                              : '📝'}
-                      </text>
-                    </g>
-                  )
-                })}
-            </svg>
-          </div>
-        </Card>
-
-        {/* 5. LOWER SPLIT: QUICK ACTIVITY LOGGER (LEFT) & ANOMALY / AI INSIGHT (RIGHT) */}
-        <section className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-          {/* Left Column: Quick Activity Logging with HeroUI Card */}
-          <Card className="lg:col-span-7 bg-white rounded-2xl sm:rounded-3xl p-6 sm:p-8 border border-stone-200/90 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.03)] space-y-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <h2 className="text-lg font-bold text-slate-900 tracking-tight">
-                  Catat Aktivitas Harian
-                </h2>
-                <p className="text-xs text-slate-500 mt-0.5">
-                  Satu ketukan untuk menghubungkan kebiasaan gaya hidup dengan grafik vital Anda.
-                </p>
-              </div>
-
-              <Chip size="sm" color="accent" variant="soft" className="font-bold text-xs">
-                {activities.length} Hari Ini
-              </Chip>
-            </div>
-
-            {/* Quick 6 Category Buttons with HeroUI Button */}
-            <div className="grid grid-cols-3 sm:grid-cols-6 gap-2.5">
-              {categories.map((cat) => (
-                <Button
-                  key={cat.key}
-                  variant="outline"
-                  onPress={() => {
-                    setSelectedLogCategory(cat.key)
-                    setIsLogModalOpen(true)
-                  }}
-                  className="p-3 h-auto rounded-2xl border border-stone-200 hover:border-teal-700 hover:bg-teal-50/40 text-center transition flex flex-col items-center gap-1.5 active:scale-95 group cursor-pointer"
-                >
-                  <span className="text-xl group-hover:scale-110 transition-transform">
-                    {cat.icon}
-                  </span>
-                  <span className="text-xs font-bold text-slate-700 group-hover:text-teal-900">
-                    {cat.label}
-                  </span>
-                </Button>
-              ))}
-            </div>
-
-            {/* Recent Activities List */}
-            <div className="space-y-3 pt-2">
-              <h3 className="text-xs font-bold text-slate-700 uppercase tracking-wider">
-                Riwayat Aktivitas Terakhir
-              </h3>
-
-              <div className="divide-y divide-stone-100 border border-stone-100 rounded-2xl overflow-hidden">
-                {activities.map((act) => (
-                  <div
-                    key={act.id}
-                    className="p-3.5 flex items-center justify-between hover:bg-stone-50/60 transition"
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-xl bg-stone-100 flex items-center justify-center text-sm">
-                        {act.category === 'kopi'
-                          ? '☕'
-                          : act.category === 'olahraga'
-                            ? '🏃'
-                            : act.category === 'makan'
-                              ? '🍲'
-                              : '🌙'}
-                      </div>
-                      <div>
-                        <h4 className="text-xs font-bold text-slate-900">{act.title}</h4>
-                        <p className="text-xs text-slate-500">{act.detail}</p>
-                      </div>
-                    </div>
-
-                    <div className="text-right">
-                      <span className="text-xs font-semibold text-slate-600 block">
-                        {act.time}
-                      </span>
-                      <span className="text-xs text-teal-700 font-medium">Terekam</span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </Card>
-
-          {/* Right Column: Anomaly Alert & AI Health Companion Insight (5 cols) */}
-          <div className="lg:col-span-5 space-y-5">
-            {/* Anomaly Detection Status Card with HeroUI Alert */}
-            <Card className="bg-white rounded-2xl sm:rounded-3xl p-6 border border-stone-200/90 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.03)] space-y-4">
+        {/* 3. VITAL TELEMETRY HUB (A Single Cohesive Sanctuary Panel, not 3 disconnected SaaS cards) */}
+        <Card className="bg-white rounded-3xl p-6 sm:p-8 border border-stone-200/90 shadow-[0_4px_24px_-4px_rgba(0,0,0,0.03)] space-y-6">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-center">
+            {/* Primary Focal Metric: Detak Jantung (Heart Rate) - 5 Cols */}
+            <div className="lg:col-span-5 space-y-3">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-slate-700 uppercase tracking-wider">
-                  Deteksi Anomali
+                <span className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
+                  <span className="w-1.5 h-1.5 rounded-full bg-rose-500" />
+                  Detak Jantung Istirahat (HR)
                 </span>
-                <Chip size="sm" color="warning" variant="soft" className="font-bold text-xs">
-                  Perlu Perhatian (Sedang)
+                <Chip size="sm" color="success" variant="soft" className="font-bold text-xs">
+                  Normal & Stabil
                 </Chip>
               </div>
 
-              {/* Anomaly Alert */}
-              <Alert status="warning" className="rounded-2xl border border-amber-200 bg-amber-50/70">
-                <Alert.Indicator />
-                <Alert.Content>
-                  <Alert.Title className="text-xs font-bold text-amber-950">
-                    Peningkatan HR Sementara Terdeteksi
-                  </Alert.Title>
-                  <Alert.Description className="text-xs text-amber-900/90 mt-0.5 leading-relaxed">
-                    Detak jantung naik ke <strong>84 BPM</strong> (+15 BPM di atas baseline) pada
-                    pukul 10:00 WIB.
-                    <div className="pt-2 text-xs text-slate-600 border-t border-amber-200/60 mt-2 font-normal">
-                      <span className="font-semibold text-slate-700">Konteks Terkait:</span> 45 menit
-                      setelah Anda mencatat 1 cangkir kopi hitam.
-                    </div>
-                  </Alert.Description>
-                </Alert.Content>
-              </Alert>
-            </Card>
+              <div className="flex items-baseline gap-2.5">
+                <span className="text-5xl sm:text-6xl font-black text-slate-900 tracking-tight font-mono">
+                  72
+                </span>
+                <span className="text-sm font-bold text-slate-500 uppercase tracking-wide">
+                  BPM
+                </span>
+              </div>
 
-            {/* AI Health Companion Insight Widget */}
-            <Card className="bg-gradient-to-br from-teal-900 to-slate-900 text-white rounded-2xl sm:rounded-3xl p-6 shadow-md space-y-4 relative overflow-hidden border border-teal-950">
-              <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-xl bg-teal-500/20 text-teal-300 border border-teal-400/30 flex items-center justify-center font-bold text-sm">
-                  AI
-                </div>
+              <div className="flex items-center gap-2 text-xs text-slate-600 font-medium">
+                <span className="text-emerald-800 font-semibold bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200">
+                  +3% di atas baseline
+                </span>
+                <span>Baseline personal Anda: 69 BPM</span>
+              </div>
+            </div>
+
+            {/* Vertical Hairline Divider for Desktop */}
+            <div className="hidden lg:block w-[1px] h-24 bg-stone-200" />
+
+            {/* Companion Metric 1: HRV (RMSSD) - 3.5 Cols */}
+            <div className="lg:col-span-3 space-y-2 border-t lg:border-t-0 pt-4 lg:pt-0 border-stone-100">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
+                  <span className="w-1.5 h-1.5 rounded-full bg-teal-500" />
+                  Variabilitas (HRV)
+                </span>
+                <Chip size="sm" color="success" variant="soft" className="font-bold text-xs">
+                  Optimal
+                </Chip>
+              </div>
+
+              <div className="flex items-baseline gap-1.5">
+                <span className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight font-mono">
+                  52
+                </span>
+                <span className="text-xs font-bold text-slate-500 uppercase">ms RMSSD</span>
+              </div>
+
+              <p className="text-xs text-slate-500 leading-relaxed">
+                Pemulihan saraf otonom parasimpatis berada dalam kondisi prima.
+              </p>
+            </div>
+
+            {/* Companion Metric 2: Laju Pernapasan (Respiration) - 3 Cols */}
+            <div className="lg:col-span-3 space-y-2 border-t lg:border-t-0 pt-4 lg:pt-0 border-stone-100">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
+                  <span className="w-1.5 h-1.5 rounded-full bg-sky-500" />
+                  Laju Pernapasan
+                </span>
+                <Chip size="sm" color="success" variant="soft" className="font-bold text-xs">
+                  Rileks
+                </Chip>
+              </div>
+
+              <div className="flex items-baseline gap-1.5">
+                <span className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight font-mono">
+                  16
+                </span>
+                <span className="text-xs font-bold text-slate-500 uppercase">nafas / mnt</span>
+              </div>
+
+              <p className="text-xs text-slate-500 leading-relaxed">
+                Irama pernapasan teratur dalam batas wajar orang dewasa (12-20 bpm).
+              </p>
+            </div>
+          </div>
+
+          {/* Unified Clinical Telemetry Status Strip */}
+          <div className="pt-4 border-t border-stone-100 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs text-slate-500 bg-stone-50/70 p-3 rounded-2xl">
+            <div className="flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-teal-600" />
+              <span>Sensor Optik Kamera: Resolusi stabil 30 FPS tanpa jitter sinyal.</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-slate-400">&middot;</span>
+              <span>Terhubung dengan: Keluarga Pratama (4 Anggota)</span>
+            </div>
+          </div>
+        </Card>
+
+        {/* 4. CHRONOLOGICAL TELEMETRY TIMELINE & JOURNAL (Asymmetric 8 cols / 4 cols Layout) */}
+        <section className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+          {/* LEFT: 8 Columns - The Day's Flow (Vital Trend Curve & Timeline Correlation) */}
+          <div className="lg:col-span-8 space-y-6">
+            <Card className="bg-white rounded-3xl p-6 sm:p-8 border border-stone-200/90 shadow-[0_4px_24px_-4px_rgba(0,0,0,0.03)] space-y-6">
+              {/* Timeline Header & Control Bar */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-stone-100">
                 <div>
-                  <h3 className="text-sm font-bold text-white tracking-tight">
-                    Sahabat Sehat Nadiku
-                  </h3>
-                  <p className="text-xs text-teal-200/90">
-                    Menganalisis data vital & riwayat keluarga Anda
+                  <h2 className="text-lg font-bold text-slate-900 tracking-tight">
+                    Bio-Ritme & Dinamika Harian
+                  </h2>
+                  <p className="text-xs text-slate-500 mt-0.5">
+                    Memvisualisasikan korelasi denyut nadi dengan kebiasaan gaya hidup Anda.
                   </p>
+                </div>
+
+                <div className="flex flex-wrap items-center gap-4">
+                  {/* Activity Marker Toggle with HeroUI Switch */}
+                  <Switch
+                    isSelected={showActivityOverlay}
+                    onChange={setShowActivityOverlay}
+                  >
+                    <Switch.Control>
+                      <Switch.Thumb />
+                    </Switch.Control>
+                    <Switch.Content className="text-xs font-semibold text-slate-700">
+                      Penanda Aktivitas
+                    </Switch.Content>
+                  </Switch>
+
+                  {/* Time Range Filter with HeroUI ButtonGroup */}
+                  <ButtonGroup variant="secondary" className="bg-stone-100 p-1 rounded-full text-xs">
+                    <Button
+                      size="sm"
+                      variant={timeRange === 'harian' ? 'primary' : 'ghost'}
+                      onPress={() => setTimeRange('harian')}
+                      className={`px-3 py-1 rounded-full transition text-xs font-semibold ${
+                        timeRange === 'harian'
+                          ? 'bg-white text-slate-900 shadow-xs font-bold'
+                          : 'text-slate-500 hover:text-slate-800'
+                      }`}
+                    >
+                      Harian
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant={timeRange === 'mingguan' ? 'primary' : 'ghost'}
+                      onPress={() => setTimeRange('mingguan')}
+                      className={`px-3 py-1 rounded-full transition text-xs font-semibold ${
+                        timeRange === 'mingguan'
+                          ? 'bg-white text-slate-900 shadow-xs font-bold'
+                          : 'text-slate-500 hover:text-slate-800'
+                      }`}
+                    >
+                      Mingguan
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant={timeRange === 'bulanan' ? 'primary' : 'ghost'}
+                      onPress={() => setTimeRange('bulanan')}
+                      className={`px-3 py-1 rounded-full transition text-xs font-semibold ${
+                        timeRange === 'bulanan'
+                          ? 'bg-white text-slate-900 shadow-xs font-bold'
+                          : 'text-slate-500 hover:text-slate-800'
+                      }`}
+                    >
+                      Bulanan
+                    </Button>
+                  </ButtonGroup>
                 </div>
               </div>
 
-              <p className="text-xs text-stone-200 leading-relaxed font-normal bg-white/10 backdrop-blur-xs p-3.5 rounded-xl border border-white/10">
-                &ldquo;Pola denyut nadi Anda menunjukkan respon normal terhadap kafein. Pada pukul
-                11:00, detak jantung sudah berangsur turun ke 76 BPM dan HRV Anda tetap dalam zona
-                pemulihan yang baik.&rdquo;
+              {/* Responsive SVG Chart */}
+              <div className="w-full overflow-x-auto">
+                <svg
+                  viewBox={`0 0 ${svgWidth} ${svgHeight}`}
+                  className="w-full min-w-[620px] h-[240px] overflow-visible select-none"
+                >
+                  <defs>
+                    <linearGradient id="tealAreaGrad" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="#0E7490" stopOpacity="0.14" />
+                      <stop offset="100%" stopColor="#0E7490" stopOpacity="0.0" />
+                    </linearGradient>
+                  </defs>
+
+                  {/* Reference Grid */}
+                  {[50, 65, 80, 95].map((hrVal) => {
+                    const y = getY(hrVal)
+                    return (
+                      <g key={hrVal}>
+                        <line
+                          x1={padLeft}
+                          y1={y}
+                          x2={svgWidth - padRight}
+                          y2={y}
+                          stroke="#F1F0EA"
+                          strokeWidth="1"
+                        />
+                        <text
+                          x={padLeft - 10}
+                          y={y + 4}
+                          textAnchor="end"
+                          className="text-xs font-mono fill-stone-400 font-semibold"
+                        >
+                          {hrVal}
+                        </text>
+                      </g>
+                    )
+                  })}
+
+                  {/* Baseline Reference Dashed Line (69 BPM) */}
+                  <line
+                    x1={padLeft}
+                    y1={getY(69)}
+                    x2={svgWidth - padRight}
+                    y2={getY(69)}
+                    stroke="#10B981"
+                    strokeWidth="1.5"
+                    strokeDasharray="4 4"
+                    strokeOpacity="0.7"
+                  />
+                  <text
+                    x={svgWidth - padRight - 5}
+                    y={getY(69) - 6}
+                    textAnchor="end"
+                    className="text-xs fill-emerald-800 font-bold"
+                  >
+                    Baseline: 69 BPM
+                  </text>
+
+                  {/* Shaded Area */}
+                  <polygon points={areaPoints} fill="url(#tealAreaGrad)" />
+
+                  {/* Main Curve */}
+                  <polyline
+                    points={hrPoints}
+                    fill="none"
+                    stroke="#0E7490"
+                    strokeWidth="2.8"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+
+                  {/* Data Points & Tooltip */}
+                  {currentChartData.map((d, idx) => {
+                    const cx = getX(idx)
+                    const cy = getY(d.hr)
+                    const isHovered = hoveredPointIndex === idx
+                    return (
+                      <g
+                        key={idx}
+                        className="cursor-pointer"
+                        onMouseEnter={() => setHoveredPointIndex(idx)}
+                        onMouseLeave={() => setHoveredPointIndex(null)}
+                      >
+                        <circle
+                          cx={cx}
+                          cy={cy}
+                          r={isHovered ? 6 : 4}
+                          className={`transition-all duration-150 ${
+                            isHovered
+                              ? 'fill-teal-900 stroke-white stroke-2'
+                              : 'fill-white stroke-teal-700 stroke-2'
+                          }`}
+                        />
+
+                        {/* X-Axis Label */}
+                        <text
+                          x={cx}
+                          y={padTop + plotHeight + 18}
+                          textAnchor="middle"
+                          className="text-xs fill-slate-500 font-medium"
+                        >
+                          {d.label}
+                        </text>
+
+                        {/* Hover Telemetry Card */}
+                        {isHovered && (
+                          <g>
+                            <rect
+                              x={cx - 45}
+                              y={cy - 48}
+                              width="90"
+                              height="36"
+                              rx="8"
+                              className="fill-slate-900 shadow-md"
+                            />
+                            <text
+                              x={cx}
+                              y={cy - 32}
+                              textAnchor="middle"
+                              className="text-xs fill-stone-300 font-medium"
+                            >
+                              {d.time}
+                            </text>
+                            <text
+                              x={cx}
+                              y={cy - 18}
+                              textAnchor="middle"
+                              className="text-xs fill-white font-bold font-mono"
+                            >
+                              {d.hr} BPM
+                            </text>
+                          </g>
+                        )}
+                      </g>
+                    )
+                  })}
+
+                  {/* Activity Markers */}
+                  {showActivityOverlay &&
+                    timeRange === 'harian' &&
+                    activities.map((act) => {
+                      const dataIndex = hourlyData.findIndex(
+                        (d) => Number(d.time.split(':')[0]) === Math.floor(act.timestamp)
+                      )
+                      if (dataIndex === -1) return null
+                      const actX = getX(dataIndex)
+                      const actY = getY(hourlyData[dataIndex].hr) - 24
+
+                      return (
+                        <g key={act.id} className="cursor-pointer group">
+                          <line
+                            x1={actX}
+                            y1={actY + 12}
+                            x2={actX}
+                            y2={getY(hourlyData[dataIndex].hr)}
+                            stroke="#0E7490"
+                            strokeWidth="1.2"
+                            strokeDasharray="2 2"
+                          />
+                          <circle
+                            cx={actX}
+                            cy={actY}
+                            r="11"
+                            className="fill-white stroke-stone-300 stroke-1.5 shadow-xs group-hover:scale-110 transition-transform"
+                          />
+                          <text
+                            x={actX}
+                            y={actY + 4}
+                            textAnchor="middle"
+                            className="text-xs select-none pointer-events-none"
+                          >
+                            {act.category === 'kopi'
+                              ? '☕'
+                              : act.category === 'olahraga'
+                                ? '🏃'
+                                : act.category === 'makan'
+                                  ? '🍲'
+                                  : '📝'}
+                          </text>
+                        </g>
+                      )
+                    })}
+                </svg>
+              </div>
+
+              {/* Integrated Lifestyle Event Feed */}
+              <div className="pt-4 border-t border-stone-100 space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-slate-700 uppercase tracking-wider">
+                    Korelasi Catatan Hari Ini ({activities.length})
+                  </span>
+                  <span className="text-xs text-slate-500">Urutan Kronologis</span>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  {activities.map((act) => (
+                    <div
+                      key={act.id}
+                      className="p-3 bg-stone-50/70 border border-stone-200/80 rounded-2xl flex items-center gap-2.5"
+                    >
+                      <span className="text-lg">{categories.find((c) => c.key === act.category)?.icon}</span>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center justify-between">
+                          <h4 className="text-xs font-bold text-slate-900 truncate">{act.title}</h4>
+                          <span className="text-xs text-slate-500 shrink-0">{act.time}</span>
+                        </div>
+                        <p className="text-xs text-slate-500 truncate">{act.detail}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </Card>
+          </div>
+
+          {/* RIGHT: 4 Columns - Lifestyle Check-In & Human Clinical Advisory Note */}
+          <div className="lg:col-span-4 space-y-6">
+            {/* Lifestyle Quick Logger Card */}
+            <Card className="bg-white rounded-3xl p-6 border border-stone-200/90 shadow-[0_4px_24px_-4px_rgba(0,0,0,0.03)] space-y-4">
+              <div>
+                <h3 className="text-sm font-bold text-slate-900 tracking-tight">
+                  Catat Aktivitas Cepat
+                </h3>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  Satu ketukan untuk mengaitkan kebiasaan dengan kurva fisiologis.
+                </p>
+              </div>
+
+              {/* 6 Category Buttons */}
+              <div className="grid grid-cols-3 gap-2">
+                {categories.map((cat) => (
+                  <Button
+                    key={cat.key}
+                    variant="outline"
+                    onPress={() => {
+                      setSelectedLogCategory(cat.key)
+                      setIsLogModalOpen(true)
+                    }}
+                    className="p-2.5 h-auto rounded-xl border border-stone-200 hover:border-teal-700 hover:bg-teal-50/40 text-center transition flex flex-col items-center gap-1 active:scale-95 group cursor-pointer"
+                  >
+                    <span className="text-lg group-hover:scale-110 transition-transform">
+                      {cat.icon}
+                    </span>
+                    <span className="text-xs font-bold text-slate-700 group-hover:text-teal-900">
+                      {cat.label}
+                    </span>
+                  </Button>
+                ))}
+              </div>
+            </Card>
+
+            {/* Editorial Health Advisory Note (Warm, Human, Calm - NO generic neon AI gradient) */}
+            <Card className="bg-[#FCFBF8] rounded-3xl p-6 border border-stone-200/90 shadow-[0_4px_24px_-4px_rgba(0,0,0,0.03)] space-y-4">
+              <div className="flex items-center justify-between border-b border-stone-200/60 pb-3">
+                <div className="flex items-center gap-2">
+                  <span className="w-6 h-6 rounded-lg bg-teal-800 text-white flex items-center justify-center font-bold text-xs">
+                    N
+                  </span>
+                  <h3 className="text-xs font-bold text-slate-900 uppercase tracking-wide">
+                    Catatan Pendamping Sehat
+                  </h3>
+                </div>
+                <Chip size="sm" color="accent" variant="soft" className="font-semibold text-xs">
+                  Analisis Konteks
+                </Chip>
+              </div>
+
+              {/* Contextual Alert for Coffee Spike */}
+              <Alert status="warning" className="rounded-2xl border border-amber-200 bg-amber-50/60">
+                <Alert.Indicator />
+                <Alert.Content>
+                  <Alert.Title className="text-xs font-bold text-amber-950">
+                    Respon Fisiologis Kafein Terdeteksi
+                  </Alert.Title>
+                  <Alert.Description className="text-xs text-amber-900/90 mt-0.5 leading-relaxed">
+                    Detak jantung sempat naik ke <strong>84 BPM</strong> pada 10:00 WIB (+15 BPM di atas baseline), bertepatan 45 menit setelah Anda mencatat 1 cangkir kopi hitam.
+                  </Alert.Description>
+                </Alert.Content>
+              </Alert>
+
+              {/* Reassuring Clinical Guidance */}
+              <p className="text-xs text-slate-700 leading-relaxed font-normal bg-white/80 p-3.5 rounded-2xl border border-stone-200/60">
+                &ldquo;Pola ini merupakan respon normal sistem kardiovaskular terhadap kafein. Pada pukul 11:00 WIB, ritme denyut telah berangsur turun ke 76 BPM dan HRV Anda tetap berada dalam ambang pemulihan optimal.&rdquo;
               </p>
 
+              {/* Consultation Action */}
               <Button
-                variant="primary"
-                size="md"
-                className="w-full py-2.5 rounded-xl bg-teal-400 hover:bg-teal-300 text-teal-950 text-xs font-bold flex items-center justify-center gap-2 transition active:scale-98 shadow-xs cursor-pointer"
+                variant="outline"
+                size="sm"
+                className="w-full py-2.5 rounded-xl border-stone-300 text-slate-800 hover:bg-stone-100 text-xs font-bold transition shadow-xs"
               >
-                <span>Tanya AI tentang Tren Hari Ini</span>
-                <svg
-                  className="w-3.5 h-3.5"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                  strokeWidth="2.5"
-                >
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
-                </svg>
+                Tanyakan Pola Tren ke Pendamping Sehat
               </Button>
             </Card>
           </div>
         </section>
       </main>
 
-      {/* 6. PERSISTENT MEDICAL DISCLAIMER FOOTER */}
+      {/* 5. PERSISTENT MEDICAL DISCLAIMER FOOTER */}
       <footer className="max-w-6xl w-full mx-auto px-4 sm:px-8 py-8 text-center text-xs text-slate-500 space-y-2 border-t border-stone-200/70 mt-8">
         <p className="text-slate-600 font-medium">
-          <strong>Pernyataan Non-Medis:</strong> Nadiku adalah platform pemantauan kebugaran dan
-          wellness berbasis rPPG & ML Anomaly Detection. Hasil pengukuran bersifat informasional dan
-          tidak menggantikan diagnosis, pemeriksaan medis klinis, atau konsultasi dokter.
+          <strong>Pernyataan Non-Medis:</strong> Nadiku adalah platform pemantauan kebugaran dan wellness berbasis rPPG & ML Anomaly Detection. Hasil pengukuran bersifat informasional dan tidak menggantikan diagnosis, pemeriksaan medis klinis, atau konsultasi dokter.
         </p>
         <p className="text-xs text-stone-500">
           Nadiku &copy; 2026 &middot; Didesain dengan prinsip ketenangan dan kepedulian keluarga.
