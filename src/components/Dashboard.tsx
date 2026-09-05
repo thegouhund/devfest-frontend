@@ -233,50 +233,88 @@ export const Dashboard: React.FC = () => {
 
       {/* 2. MAIN SANCTUARY CONTENT */}
       <main className="max-w-6xl w-full mx-auto px-4 sm:px-8 py-6 sm:py-8 space-y-8 flex-1">
-        {/* Natural Header Flow (Organic, Not a boxed card) */}
-        <header className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 pt-1">
-          <div className="space-y-1">
-            <div className="flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-emerald-600 animate-pulse" />
-              <span className="text-xs font-semibold text-teal-900 uppercase tracking-wider">
-                Kondisi Fisiologis Terkalibrasi
+        {/* Natural Header Greeting */}
+        <header className="space-y-1 pt-1">
+          <div className="flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-emerald-600 animate-pulse" />
+            <span className="text-xs font-semibold text-teal-900 uppercase tracking-wider">
+              Kondisi Fisiologis Terkalibrasi
+            </span>
+          </div>
+          <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
+            Selamat Pagi, Budi
+          </h1>
+          <p className="text-xs sm:text-sm text-slate-600">
+            Pemeriksaan terakhir dicatat pukul <strong>08:30 WIB</strong> &middot; Kualitas sinyal 98% (Sangat Baik).
+          </p>
+        </header>
+
+        {/* HERO CTA PENGUKURAN RAMAH LANSIA (SENIOR-ACCESSIBLE PRIMARY HERO CTA) */}
+        <Card className="bg-white rounded-3xl p-6 sm:p-8 border-2 border-teal-700/25 shadow-[0_8px_30px_-6px_rgba(13,148,136,0.08)] relative overflow-hidden">
+          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+            {/* Left: Instructional Context with High Contrast & Senior-Friendly Typography */}
+            <div className="flex items-start sm:items-center gap-4 sm:gap-5">
+              <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-teal-50 border border-teal-200 text-teal-800 flex items-center justify-center shrink-0 shadow-xs">
+                <svg
+                  className="w-7 h-7 sm:w-8 sm:h-8 text-teal-800"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                  strokeWidth="2"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"
+                  />
+                  <circle cx="9" cy="12" r="3.2" strokeWidth="2" />
+                </svg>
+              </div>
+
+              <div className="space-y-1.5">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="inline-flex items-center gap-1.5 text-xs font-bold text-teal-900 bg-teal-50 px-2.5 py-0.5 rounded-full border border-teal-200">
+                    <span className="w-2 h-2 rounded-full bg-emerald-600 animate-pulse" />
+                    Kamera rPPG Siap Digunakan
+                  </span>
+                  <span className="text-xs text-slate-500 font-medium">Hanya 30 Detik</span>
+                </div>
+
+                <h2 className="text-xl sm:text-2xl font-extrabold text-slate-900 tracking-tight leading-tight">
+                  Periksa Detak Jantung & Vitalitas Sekarang
+                </h2>
+
+                <p className="text-sm text-slate-600 font-normal leading-relaxed max-w-xl">
+                  Cukup tatap layar kamera di ruangan yang terang. Praktis, nyaman, tanpa kabel sensor, dan tanpa menyentuh apapun.
+                </p>
+              </div>
+            </div>
+
+            {/* Right: Big, High-Contrast Senior-Friendly Button */}
+            <div className="shrink-0 flex flex-col sm:flex-row lg:flex-col items-stretch sm:items-center lg:items-end gap-2">
+              <Button
+                variant="primary"
+                size="lg"
+                className="h-14 sm:h-16 px-8 sm:px-10 rounded-2xl bg-teal-800 hover:bg-teal-900 active:scale-98 text-white font-bold text-base sm:text-lg flex items-center justify-center gap-3 transition shadow-md cursor-pointer border border-teal-700"
+              >
+                <span className="w-3 h-3 rounded-full bg-emerald-400 animate-ping shrink-0" />
+                <span>Mulai Ukur Sekarang</span>
+                <svg
+                  className="w-5 h-5 text-teal-200 shrink-0"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                  strokeWidth="2.5"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                </svg>
+              </Button>
+              <span className="text-xs text-slate-500 font-medium text-center lg:text-right">
+                Sentuh tombol hijau gelap di atas untuk memulai
               </span>
             </div>
-            <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
-              Selamat Pagi, Budi
-            </h1>
-            <p className="text-xs sm:text-sm text-slate-600">
-              Pemeriksaan rPPG terakhir dicatat pukul <strong>08:30 WIB</strong> &middot; Kualitas sinyal 98% (Sangat Baik).
-            </p>
           </div>
-
-          {/* Primary Action Button */}
-          <Button
-            size="md"
-            variant="primary"
-            className="px-6 py-2.5 rounded-full text-xs font-bold bg-slate-900 hover:bg-slate-800 text-white flex items-center gap-2 transition active:scale-95 shadow-sm shrink-0 self-start sm:self-auto"
-          >
-            <svg
-              className="w-4 h-4 text-emerald-400"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-              strokeWidth="2.2"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"
-              />
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"
-              />
-            </svg>
-            <span>Mulai Pengukuran rPPG Baru</span>
-          </Button>
-        </header>
+        </Card>
 
         {/* 3. VITAL TELEMETRY HUB (A Single Cohesive Sanctuary Panel, not 3 disconnected SaaS cards) */}
         <Card className="bg-white rounded-3xl p-6 sm:p-8 border border-stone-200/90 shadow-[0_4px_24px_-4px_rgba(0,0,0,0.03)] space-y-6">
