@@ -2,79 +2,116 @@ import React, { useEffect, useRef, useState } from 'react'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Chip } from '@/components/ui/badge'
-import { Heart, Activity, Wind, CameraOff, RotateCcw } from 'lucide-react'
+import {
+  Heart,
+  Activity,
+  Wind,
+  CameraOff,
+  RotateCcw,
+  AlertTriangle,
+  Gauge,
+  UploadCloud,
+} from 'lucide-react'
+import { ApiError } from '@/lib/api'
+import {
+  getMeasurement,
+  getMeasurementResults,
+  uploadMeasurement,
+  type MeasurementResult,
+  type Reading,
+} from '@/lib/health-api'
 import { useChat } from '../context/ChatContext'
 
 const DURATION = 30 // detik
+const POLL_INTERVAL = 2000
+const POLL_TIMEOUT = 60000
 
-type Sample = { t: number; v: number }
+/**
+ * idle → recording → recorded (rekaman siap ditinjau) → uploading → processing → done | failed
+ * Perekaman dan pengunggahan sengaja dipisah supaya pengguna bisa merekam
+ * ulang sebelum mengirim, dan kegagalan unggah tidak menghapus rekamannya.
+ */
+type Phase = 'idle' | 'recording' | 'recorded' | 'uploading' | 'processing' | 'done' | 'failed'
 
-type Result = { hr: number; hrv: number; rr: number; quality: number }
+// Chrome merekam webm, Safari mp4. Kontrak menyebut mp4/mov, jadi mp4
+// diprioritaskan dan webm dipakai kalau browser tidak mendukungnya.
+const CANDIDATE_TYPES = [
+  'video/mp4;codecs=avc1',
+  'video/mp4',
+  'video/webm;codecs=h264',
+  'video/webm;codecs=vp9',
+  'video/webm',
+]
 
-// Deteksi puncak sinyal PPG: detrend moving-average lalu cari maksimum lokal
-// dengan jarak minimum 0.35s (≈171 BPM ceiling).
-function analyze(samples: Sample[]): Result | null {
-  if (samples.length < 60) return null
-  const dur = samples[samples.length - 1].t - samples[0].t
-  if (dur < 5) return null
+const pickMimeType = () => CANDIDATE_TYPES.find((type) => MediaRecorder.isTypeSupported(type)) ?? ''
 
-  const fps = samples.length / dur
-  const win = Math.max(3, Math.round(fps * 0.75))
-  const detrended = samples.map((s, i) => {
-    const from = Math.max(0, i - win)
-    const to = Math.min(samples.length, i + win + 1)
-    let sum = 0
-    for (let j = from; j < to; j++) sum += samples[j].v
-    return { t: s.t, v: s.v - sum / (to - from) }
-  })
+const extensionFor = (mimeType: string) => (mimeType.includes('mp4') ? 'mp4' : 'webm')
 
-  const peaks: number[] = []
-  for (let i = 1; i < detrended.length - 1; i++) {
-    const p = detrended[i]
-    if (p.v <= 0) continue
-    if (p.v < detrended[i - 1].v || p.v < detrended[i + 1].v) continue
-    if (peaks.length && p.t - peaks[peaks.length - 1] < 0.35) {
-      if (p.v > detrended[i - 1].v) peaks[peaks.length - 1] = p.t
-      continue
-    }
-    peaks.push(p.t)
-  }
-  if (peaks.length < 5) return null
-
-  const ibi = peaks.slice(1).map((t, i) => (t - peaks[i]) * 1000)
-  const sorted = [...ibi].sort((a, b) => a - b)
-  const median = sorted[Math.floor(sorted.length / 2)]
-  const hr = Math.round(60000 / median)
-  if (hr < 40 || hr > 180) return null
-
-  const diffs = ibi.slice(1).map((v, i) => v - ibi[i])
-  const rmssd = Math.sqrt(diffs.reduce((a, d) => a + d * d, 0) / diffs.length)
-
-  const mean = ibi.reduce((a, b) => a + b, 0) / ibi.length
-  const sd = Math.sqrt(ibi.reduce((a, v) => a + (v - mean) ** 2, 0) / ibi.length)
-  const quality = Math.max(0, Math.min(99, Math.round(100 - (sd / mean) * 220)))
-
-  // ponytail: laju napas diturunkan dari modulasi IBI (RSA) secara kasar,
-  // ganti dengan band-pass 0.1-0.5 Hz kalau butuh akurasi klinis.
-  const rr = Math.max(8, Math.min(30, Math.round(60 / (median / 1000) / 4.5)))
-
-  return { hr, hrv: Math.round(rmssd), rr, quality }
+const METRIC_LABELS: Record<
+  string,
+  { label: string; icon: typeof Heart; bg: string; ring: string; fg: string }
+> = {
+  heart_rate: {
+    label: 'Detak Jantung',
+    icon: Heart,
+    bg: 'bg-rose-50',
+    ring: 'border-rose-100/80',
+    fg: 'text-rose-500',
+  },
+  hrv_rmssd: {
+    label: 'Variabilitas (HRV)',
+    icon: Activity,
+    bg: 'bg-sage-50',
+    ring: 'border-sage-100/80',
+    fg: 'text-sage-600',
+  },
+  respiration_rate: {
+    label: 'Laju Pernapasan',
+    icon: Wind,
+    bg: 'bg-clay-50',
+    ring: 'border-clay-100/80',
+    fg: 'text-clay-600',
+  },
 }
+
+// Metrik baru bisa ditambahkan tanpa perubahan API, jadi yang tidak dikenal
+// tetap dirender apa adanya.
+const describeMetric = (metricType: string) =>
+  METRIC_LABELS[metricType] ?? {
+    label: metricType.replace(/_/g, ' '),
+    icon: Gauge,
+    bg: 'bg-ink-100',
+    ring: 'border-ink-200/80',
+    fg: 'text-ink-600',
+  }
+
+const QUALITY_LABELS: Record<string, string> = {
+  good: 'Baik',
+  fair: 'Cukup',
+  poor: 'Kurang',
+  rejected: 'Ditolak',
+}
+
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
 
 export const RppgMeasure: React.FC = () => {
   const { addAiMessage } = useChat()
   const videoRef = useRef<HTMLVideoElement>(null)
-  const canvasRef = useRef<HTMLCanvasElement>(null)
   const streamRef = useRef<MediaStream | null>(null)
-  const samplesRef = useRef<Sample[]>([])
-  const rafRef = useRef<number>(0)
+  const recorderRef = useRef<MediaRecorder | null>(null)
+  const chunksRef = useRef<Blob[]>([])
+  const timerRef = useRef<number>(0)
+  const cancelledRef = useRef(false)
 
-  const [error, setError] = useState<string | null>(null)
+  const [cameraError, setCameraError] = useState<string | null>(null)
   const [ready, setReady] = useState(false)
-  const [recording, setRecording] = useState(false)
-  const [progress, setProgress] = useState(0)
-  const [live, setLive] = useState<number | null>(null)
-  const [result, setResult] = useState<Result | null>(null)
+  const [phase, setPhase] = useState<Phase>('idle')
+  const [elapsed, setElapsed] = useState(0)
+  const [message, setMessage] = useState<string | null>(null)
+  const [recording, setRecording] = useState<{ blob: Blob; mimeType: string; url: string } | null>(
+    null
+  )
+  const [result, setResult] = useState<MeasurementResult | null>(null)
 
   useEffect(() => {
     let cancelled = false
@@ -89,7 +126,7 @@ export const RppgMeasure: React.FC = () => {
         if (videoRef.current) videoRef.current.srcObject = stream
         setReady(true)
       })
-      .catch((e: Error) => setError(e.message || 'Kamera tidak dapat diakses'))
+      .catch((e: Error) => setCameraError(e.message || 'Kamera tidak dapat diakses'))
 
     return () => {
       cancelled = true
@@ -97,103 +134,182 @@ export const RppgMeasure: React.FC = () => {
     }
   }, [])
 
-  const finish = () => {
-    cancelAnimationFrame(rafRef.current)
-    setRecording(false)
-    const r = analyze(samplesRef.current)
-    setResult(r)
-    if (r) {
-      addAiMessage(
-        `Pengukuran rPPG selesai: ${r.hr} BPM, HRV ${r.hrv} ms, napas ${r.rr}/menit (kualitas sinyal ${r.quality}%).`,
-        true
+  // StrictMode memasang efek dua kali (mount → cleanup → mount), jadi flag ini
+  // harus dinyalakan ulang saat mount. Tanpa itu, cleanup pertama membuatnya
+  // permanen true dan polling berhenti sebelum request pertama.
+  useEffect(() => {
+    cancelledRef.current = false
+    return () => {
+      cancelledRef.current = true
+      window.clearInterval(timerRef.current)
+    }
+  }, [])
+
+  // Object URL pratinjau dilepas begitu rekamannya diganti atau komponen tutup.
+  useEffect(() => {
+    if (!recording) return
+    return () => URL.revokeObjectURL(recording.url)
+  }, [recording])
+
+  const stopRecording = () => {
+    window.clearInterval(timerRef.current)
+    if (recorderRef.current?.state === 'recording') recorderRef.current.stop()
+  }
+
+  const startRecording = () => {
+    const stream = streamRef.current
+    if (!stream) return
+
+    const mimeType = pickMimeType()
+    if (!mimeType) {
+      setPhase('failed')
+      setMessage('Browser ini tidak mendukung perekaman video.')
+      return
+    }
+
+    chunksRef.current = []
+    setRecording(null)
+    setResult(null)
+    setMessage(null)
+    setElapsed(0)
+    setPhase('recording')
+
+    const recorder = new MediaRecorder(stream, { mimeType })
+    recorderRef.current = recorder
+    recorder.ondataavailable = (e) => {
+      if (e.data.size > 0) chunksRef.current.push(e.data)
+    }
+    recorder.onstop = () => {
+      window.clearInterval(timerRef.current)
+      const blob = new Blob(chunksRef.current, { type: mimeType })
+      setRecording({ blob, mimeType, url: URL.createObjectURL(blob) })
+      setPhase('recorded')
+    }
+    recorder.start()
+
+    const startedAt = Date.now()
+    timerRef.current = window.setInterval(() => {
+      const seconds = (Date.now() - startedAt) / 1000
+      setElapsed(seconds)
+      if (seconds >= DURATION) stopRecording()
+    }, 200)
+  }
+
+  /** Cek status tiap 2 detik sampai selesai, gagal, atau lewat 60 detik. */
+  const pollUntilReady = async (sessionId: string) => {
+    const deadline = Date.now() + POLL_TIMEOUT
+    while (Date.now() < deadline) {
+      await sleep(POLL_INTERVAL)
+      if (cancelledRef.current) return
+      const session = await getMeasurement(sessionId)
+
+      if (session.processing_status === 'completed') {
+        const results = await getMeasurementResults(sessionId)
+        if (cancelledRef.current) return
+        setResult(results)
+        setPhase('done')
+
+        if (results.signal_quality_flag === 'rejected') {
+          setMessage('Kualitas sinyal terlalu rendah untuk dipercaya. Silakan rekam ulang.')
+          return
+        }
+        const summary = results.readings
+          .map((r) =>
+            `${describeMetric(r.metric_type).label} ${Math.round(r.value)} ${r.unit ?? ''}`.trim()
+          )
+          .join(', ')
+        addAiMessage(`Pengukuran rPPG selesai. ${summary}.`, true)
+        return
+      }
+
+      if (session.processing_status === 'failed') {
+        setPhase('failed')
+        setMessage('Server gagal memproses rekaman ini. Coba rekam ulang dengan cahaya lebih baik.')
+        return
+      }
+    }
+
+    setPhase('failed')
+    setMessage('Pemrosesan memakan waktu terlalu lama. Coba unggah ulang.')
+  }
+
+  const upload = async () => {
+    if (!recording) return
+    setPhase('uploading')
+    setMessage(null)
+    try {
+      const { session_id } = await uploadMeasurement(
+        recording.blob,
+        `rppg-${Date.now()}.${extensionFor(recording.mimeType)}`
       )
+      setPhase('processing')
+      await pollUntilReady(session_id)
+    } catch (error) {
+      // Rekaman sengaja dipertahankan supaya bisa dicoba unggah lagi.
+      setPhase('recorded')
+      setMessage(error instanceof ApiError ? error.message : 'Gagal mengirim rekaman ke server')
     }
   }
 
-  useEffect(() => () => cancelAnimationFrame(rafRef.current), [])
+  const isBusy = phase === 'uploading' || phase === 'processing'
+  const progress =
+    phase === 'recording' ? Math.min(1, elapsed / DURATION) : phase === 'idle' ? 0 : 1
+  const rejected = result?.signal_quality_flag === 'rejected'
+  const qualityPercent =
+    result?.signal_quality_score != null ? Math.round(result.signal_quality_score * 100) : null
+  const showPreview = recording !== null && phase !== 'recording'
 
-  const start = () => {
-    const video = videoRef.current
-    const canvas = canvasRef.current
-    if (!video || !canvas) return
-
-    samplesRef.current = []
-    setResult(null)
-    setProgress(0)
-    setLive(null)
-    setRecording(true)
-
-    const ctx = canvas.getContext('2d', { willReadFrequently: true })
-    if (!ctx) return
-    const t0 = performance.now()
-
-    const tick = () => {
-      const w = video.videoWidth
-      const h = video.videoHeight
-      if (!w || !h) {
-        rafRef.current = requestAnimationFrame(tick)
-        return
-      }
-      // ROI: area dahi/pipi di tengah-atas frame, sejajar bingkai oval
-      const rw = w * 0.28
-      const rh = h * 0.22
-      canvas.width = 64
-      canvas.height = 64
-      ctx.drawImage(video, (w - rw) / 2, h * 0.2, rw, rh, 0, 0, 64, 64)
-      const { data } = ctx.getImageData(0, 0, 64, 64)
-      let g = 0
-      for (let i = 1; i < data.length; i += 4) g += data[i]
-      const t = (performance.now() - t0) / 1000
-      samplesRef.current.push({ t, v: g / (data.length / 4) })
-
-      setProgress(Math.min(1, t / DURATION))
-      if (samplesRef.current.length % 30 === 0) {
-        const partial = analyze(samplesRef.current)
-        if (partial) setLive(partial.hr)
-      }
-
-      if (t >= DURATION) {
-        finish()
-        return
-      }
-      rafRef.current = requestAnimationFrame(tick)
-    }
-    rafRef.current = requestAnimationFrame(tick)
+  const statusText = () => {
+    if (phase === 'recording') return 'Merekam wajah…'
+    if (phase === 'recorded') return 'Rekaman siap. Tinjau lalu unggah untuk dianalisis.'
+    if (phase === 'uploading') return 'Mengunggah rekaman…'
+    if (phase === 'processing') return 'Server sedang menganalisis sinyal mikrovaskular…'
+    if (phase === 'done') return rejected ? 'Sinyal ditolak' : 'Pengukuran selesai'
+    if (phase === 'failed') return 'Pengukuran gagal'
+    return `Tekan tombol rekam untuk mulai (${DURATION} detik)`
   }
 
   return (
     <div className="space-y-5">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
+          <h1 className="text-2xl sm:text-3xl font-extrabold text-ink-900 tracking-tight">
             Ukur rPPG
           </h1>
-          <p className="text-xs sm:text-sm text-slate-500 mt-0.5">
-            Pindai detak jantung dan vital sign lewat kamera. Duduk tenang, wajah di dalam bingkai.
+          <p className="text-xs sm:text-sm text-ink-500 mt-0.5">
+            Rekam wajah selama {DURATION} detik, lalu unggah untuk dianalisis server.
           </p>
         </div>
         <Chip
           size="sm"
-          color={error ? 'warning' : ready ? 'success' : 'neutral'}
+          color={cameraError ? 'warning' : ready ? 'success' : 'neutral'}
           variant="soft"
           className="font-semibold text-xs self-start sm:self-auto"
         >
-          ● {error ? 'Kamera Nonaktif' : ready ? 'Kamera Aktif' : 'Menyiapkan Kamera…'}
+          ● {cameraError ? 'Kamera Nonaktif' : ready ? 'Kamera Aktif' : 'Menyiapkan Kamera…'}
         </Chip>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
-        {/* VIEWFINDER + TOMBOL REKAM */}
-        <Card className="lg:col-span-8 p-5 sm:p-6 rounded-2xl sm:rounded-3xl bg-white border border-slate-200/80 shadow-xs space-y-5">
-          <div className="relative w-full aspect-[4/3] bg-slate-950 rounded-2xl overflow-hidden border border-slate-800">
-            {error ? (
+        {/* VIEWFINDER / PRATINJAU + KONTROL */}
+        <Card className="lg:col-span-8 p-5 sm:p-6 rounded-2xl sm:rounded-3xl bg-white border border-ink-200/80 shadow-xs space-y-5">
+          <div className="relative w-full aspect-4/3 bg-ink-950 rounded-2xl overflow-hidden border border-ink-800">
+            {cameraError ? (
               <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 text-center px-6">
-                <CameraOff className="w-7 h-7 text-slate-500" />
-                <span className="text-sm font-bold text-slate-200">Kamera tidak dapat diakses</span>
-                <p className="text-xs text-slate-400 max-w-xs">
-                  Izinkan akses kamera di browser lalu muat ulang halaman. ({error})
+                <CameraOff className="w-7 h-7 text-ink-500" />
+                <span className="text-sm font-bold text-ink-200">Kamera tidak dapat diakses</span>
+                <p className="text-xs text-ink-400 max-w-xs">
+                  Izinkan akses kamera di browser lalu muat ulang halaman. ({cameraError})
                 </p>
               </div>
+            ) : showPreview ? (
+              <video
+                key={recording.url}
+                src={recording.url}
+                controls
+                playsInline
+                className="absolute inset-0 w-full h-full object-contain bg-black"
+              />
             ) : (
               <video
                 ref={videoRef}
@@ -204,135 +320,183 @@ export const RppgMeasure: React.FC = () => {
               />
             )}
 
-            {/* Bingkai oval wajah */}
-            <div className="absolute inset-0 flex items-start justify-center pt-[12%] pointer-events-none">
-              <div
-                className={`w-[38%] aspect-[3/4] border-2 border-dashed rounded-[50%] transition-colors ${
-                  recording ? 'border-emerald-400' : 'border-teal-400/70 animate-pulse'
+            {/* Bingkai oval hanya relevan saat membidik, bukan saat meninjau */}
+            {!showPreview && !cameraError && (
+              <div className="absolute inset-0 flex items-start justify-center pt-[12%] pointer-events-none">
+                <div
+                  className={`w-[38%] aspect-3/4 border-2 border-dashed rounded-[50%] transition-colors ${
+                    phase === 'recording' ? 'border-emerald-400' : 'border-clay-400/70 animate-pulse'
+                  }`}
+                />
+              </div>
+            )}
+
+            <div className="absolute top-3 right-3 flex items-center gap-1.5 bg-black/60 backdrop-blur-xs px-2.5 py-1 rounded-full text-[11px] text-emerald-400 font-mono">
+              <span
+                className={`w-2 h-2 rounded-full bg-emerald-400 ${
+                  phase === 'recording' ? 'animate-pulse' : ''
                 }`}
               />
-            </div>
-
-            {/* Status kualitas */}
-            <div className="absolute top-3 right-3 flex items-center gap-1.5 bg-black/60 backdrop-blur-xs px-2.5 py-1 rounded-full text-[11px] text-emerald-400 font-mono">
-              <span className={`w-2 h-2 rounded-full bg-emerald-400 ${recording ? 'animate-pulse' : ''}`} />
-              {recording ? `Merekam ${Math.round(progress * DURATION)}s / ${DURATION}s` : 'Siap'}
-            </div>
-
-            {/* Estimasi live */}
-            <div className="absolute bottom-3 left-3 right-3 flex items-center justify-between bg-black/60 backdrop-blur-xs px-3 py-1.5 rounded-xl text-xs text-white">
-              <span className="text-slate-300">Detak Estimasi:</span>
-              <span className="font-mono font-bold text-teal-300">
-                {live ? `${live} BPM` : '—'}
-              </span>
+              {phase === 'recording'
+                ? `${Math.floor(elapsed)}s / ${DURATION}s`
+                : showPreview
+                ? 'Pratinjau'
+                : 'Siap'}
             </div>
           </div>
 
           {/* Progress */}
           <div className="space-y-1.5">
-            <div className="flex justify-between text-xs font-semibold text-slate-600">
-              <span>
-                {recording
-                  ? 'Memproses sinyal mikrovaskular wajah…'
-                  : result
-                  ? 'Pengukuran selesai'
-                  : 'Tekan tombol rekam untuk mulai'}
+            <div className="flex justify-between text-xs font-semibold text-ink-600">
+              <span>{statusText()}</span>
+              <span className="text-clay-700 font-mono font-bold">
+                {isBusy ? '…' : `${Math.round(progress * 100)}%`}
               </span>
-              <span className="text-teal-700 font-mono font-bold">{Math.round(progress * 100)}%</span>
             </div>
-            <div className="w-full bg-slate-100 rounded-full h-2 overflow-hidden">
+            <div className="w-full bg-ink-100 rounded-full h-2 overflow-hidden">
               <div
-                className="bg-teal-700 h-2 rounded-full transition-all duration-200"
+                className={`h-2 rounded-full transition-all duration-200 ${
+                  isBusy ? 'bg-clay-400 animate-pulse' : 'bg-clay-700'
+                }`}
                 style={{ width: `${progress * 100}%` }}
               />
             </div>
           </div>
 
-          {/* TOMBOL REKAM */}
-          <div className="flex flex-col items-center gap-2 pt-1">
+          {message && (
+            <div className="flex items-start gap-2 p-3 rounded-xl bg-amber-50 border border-amber-200 text-xs text-amber-800 font-medium">
+              <AlertTriangle className="w-3.5 h-3.5 shrink-0 mt-0.5" />
+              <span>{message}</span>
+            </div>
+          )}
+
+          {/* KONTROL */}
+          <div className="flex flex-col items-center gap-3 pt-1">
             <button
               type="button"
-              onClick={recording ? finish : start}
-              disabled={!ready}
-              aria-label={recording ? 'Hentikan rekaman' : 'Mulai rekam'}
-              className="w-20 h-20 rounded-3xl bg-white border-2 border-slate-300 flex items-center justify-center shadow-xs transition hover:border-rose-400 active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+              onClick={phase === 'recording' ? stopRecording : startRecording}
+              disabled={!ready || isBusy}
+              aria-label={phase === 'recording' ? 'Hentikan rekaman' : 'Mulai rekam'}
+              className="w-20 h-20 rounded-3xl bg-white border-2 border-ink-300 flex items-center justify-center shadow-xs transition hover:border-rose-400 active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
             >
               <span
                 className={`bg-rose-600 transition-all ${
-                  recording ? 'w-6 h-6 rounded-md' : 'w-11 h-11 rounded-full'
+                  phase === 'recording' ? 'w-6 h-6 rounded-md' : 'w-11 h-11 rounded-full'
                 }`}
               />
             </button>
-            <span className="text-xs font-semibold text-slate-500">
-              {recording ? 'Ketuk untuk berhenti' : `Rekam ${DURATION} detik`}
+
+            <span className="text-xs font-semibold text-ink-500">
+              {phase === 'recording'
+                ? 'Ketuk untuk berhenti lebih awal'
+                : isBusy
+                ? 'Menunggu hasil dari server'
+                : recording
+                ? 'Rekam ulang'
+                : `Rekam ${DURATION} detik`}
             </span>
+
+            {recording && !isBusy && phase !== 'done' && (
+              <Button
+                size="sm"
+                onClick={() => void upload()}
+                className="px-6 py-2.5 rounded-full text-xs font-bold bg-ink-900 hover:bg-ink-800 text-white shadow-xs cursor-pointer"
+              >
+                <UploadCloud className="w-3.5 h-3.5 text-clay-300" />
+                Unggah & Analisis
+              </Button>
+            )}
           </div>
         </Card>
 
         {/* HASIL */}
         <div className="lg:col-span-4 space-y-4">
-          <Card className="p-5 sm:p-6 rounded-2xl sm:rounded-3xl bg-white border border-slate-200/80 shadow-xs space-y-4">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-              <h3 className="text-sm font-bold text-slate-900 tracking-tight">Hasil Pengukuran</h3>
-              {result && (
+          <Card className="p-5 sm:p-6 rounded-2xl sm:rounded-3xl bg-white border border-ink-200/80 shadow-xs space-y-4">
+            <div className="flex items-center justify-between pb-3 border-b border-ink-100">
+              <h3 className="text-sm font-bold text-ink-900 tracking-tight">Hasil Pengukuran</h3>
+              {(phase === 'done' || phase === 'failed') && (
                 <Button
                   size="sm"
                   variant="ghost"
-                  onClick={start}
-                  className="text-xs font-semibold text-slate-600 rounded-full"
+                  onClick={startRecording}
+                  disabled={!ready}
+                  className="text-xs font-semibold text-ink-600 rounded-full cursor-pointer"
                 >
-                  <RotateCcw className="w-3.5 h-3.5" /> Ulangi
+                  <RotateCcw className="w-3.5 h-3.5" /> Rekam Ulang
                 </Button>
               )}
             </div>
 
             {!result ? (
-              <p className="text-xs text-slate-500 py-6 text-center">
-                {recording
-                  ? 'Sedang mengumpulkan sinyal…'
-                  : 'Belum ada hasil. Rekam minimal 30 detik dengan pencahayaan yang cukup.'}
+              <p className="text-xs text-ink-500 py-6 text-center">
+                {isBusy
+                  ? 'Menunggu hasil analisis server…'
+                  : phase === 'recorded'
+                  ? 'Rekaman belum diunggah. Tekan "Unggah & Analisis" untuk mendapatkan hasil.'
+                  : 'Belum ada hasil. Rekam dengan pencahayaan yang cukup dan wajah tidak tertutup.'}
               </p>
+            ) : rejected ? (
+              // Kontrak: jangan tampilkan angka apa pun kalau sinyalnya ditolak.
+              <div className="py-6 text-center space-y-2">
+                <AlertTriangle className="w-6 h-6 text-amber-500 mx-auto" />
+                <p className="text-xs text-ink-600">
+                  Sinyal tidak cukup andal untuk ditampilkan. Rekam ulang dengan cahaya merata dan
+                  tanpa banyak gerakan.
+                </p>
+              </div>
             ) : (
               <div className="space-y-3">
-                {[
-                  { icon: Heart, label: 'Detak Jantung', val: result.hr, unit: 'BPM', bg: 'bg-rose-50', ring: 'border-rose-100/80', fg: 'text-rose-500' },
-                  { icon: Activity, label: 'Variabilitas (HRV)', val: result.hrv, unit: 'ms RMSSD', bg: 'bg-sky-50', ring: 'border-sky-100/80', fg: 'text-sky-600' },
-                  { icon: Wind, label: 'Laju Pernapasan', val: result.rr, unit: 'bpm', bg: 'bg-teal-50', ring: 'border-teal-100/80', fg: 'text-teal-600' },
-                ].map((m) => (
-                  <div key={m.label} className="flex items-center gap-3">
-                    <div className={`w-10 h-10 rounded-xl ${m.bg} border ${m.ring} flex items-center justify-center ${m.fg} shrink-0`}>
-                      <m.icon className="w-5 h-5" />
-                    </div>
-                    <div className="text-left">
-                      <span className="text-xs font-semibold text-slate-500 block">{m.label}</span>
-                      <div className="flex items-baseline gap-1">
-                        <span className="text-2xl font-extrabold text-slate-900 tracking-tight leading-none">
-                          {m.val}
+                {result.readings.map((reading: Reading) => {
+                  const meta = describeMetric(reading.metric_type)
+                  return (
+                    <div key={reading.metric_type} className="flex items-center gap-3">
+                      <div
+                        className={`w-10 h-10 rounded-xl ${meta.bg} border ${meta.ring} flex items-center justify-center ${meta.fg} shrink-0`}
+                      >
+                        <meta.icon className="w-5 h-5" />
+                      </div>
+                      <div className="text-left">
+                        <span className="text-xs font-semibold text-ink-500 block capitalize">
+                          {meta.label}
                         </span>
-                        <span className="text-xs font-semibold text-slate-400 uppercase">{m.unit}</span>
+                        <div className="flex items-baseline gap-1">
+                          <span className="text-2xl font-extrabold text-ink-900 tracking-tight leading-none">
+                            {Math.round(reading.value)}
+                          </span>
+                          <span className="text-xs font-semibold text-ink-400 uppercase">
+                            {reading.unit ?? ''}
+                          </span>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ))}
+                  )
+                })}
 
-                <div className="pt-3 border-t border-slate-100 flex items-center justify-between text-xs">
-                  <span className="text-slate-500 font-medium">Kualitas Sinyal</span>
+                <div className="pt-3 border-t border-ink-100 flex items-center justify-between text-xs">
+                  <span className="text-ink-500 font-medium">Kualitas Sinyal</span>
                   <Chip
                     size="sm"
                     variant="soft"
-                    color={result.quality >= 70 ? 'success' : 'warning'}
+                    color={result.signal_quality_flag === 'good' ? 'success' : 'warning'}
                     className="font-bold text-[10px]"
                   >
-                    {result.quality}% {result.quality >= 70 ? 'Stabil' : 'Kurang Stabil'}
+                    {QUALITY_LABELS[result.signal_quality_flag ?? ''] ?? 'Tidak diketahui'}
+                    {qualityPercent !== null ? ` · ${qualityPercent}%` : ''}
                   </Chip>
                 </div>
               </div>
             )}
+
+            {result?.disclaimer && (
+              <p className="text-[11px] text-ink-400 leading-relaxed pt-3 border-t border-ink-100">
+                {result.disclaimer}
+              </p>
+            )}
           </Card>
 
-          <Card className="p-5 rounded-2xl bg-slate-50/70 border border-slate-200/80 shadow-none space-y-2">
-            <h4 className="text-xs font-bold text-slate-800">Tips Pengukuran</h4>
-            <ul className="text-xs text-slate-600 space-y-1.5 list-disc pl-4">
+          <Card className="p-5 rounded-2xl bg-ink-50/70 border border-ink-200/80 shadow-none space-y-2">
+            <h4 className="text-xs font-bold text-ink-800">Tips Pengukuran</h4>
+            <ul className="text-xs text-ink-600 space-y-1.5 list-disc pl-4">
               <li>Cahaya merata di wajah, hindari backlight dari jendela.</li>
               <li>Duduk diam dan bernapas normal selama perekaman.</li>
               <li>Lepas masker atau apapun yang menutupi dahi dan pipi.</li>
@@ -340,8 +504,6 @@ export const RppgMeasure: React.FC = () => {
           </Card>
         </div>
       </div>
-
-      <canvas ref={canvasRef} className="hidden" />
     </div>
   )
 }

@@ -22,7 +22,7 @@ const badgeVariants = cva(
           "bg-emerald-500/15 text-emerald-700 border-emerald-500/20 dark:bg-emerald-500/20 dark:text-emerald-300",
         warning:
           "bg-amber-500/15 text-amber-800 border-amber-500/20 dark:bg-amber-500/20 dark:text-amber-300",
-        soft: "bg-teal-500/15 text-teal-800 border-teal-500/20",
+        soft: "bg-ink-500/15 text-ink-800 border-ink-500/20",
       },
     },
     defaultVariants: {

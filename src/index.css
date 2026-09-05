@@ -8,29 +8,29 @@
 :root {
   color-scheme: light;
   --font-sans: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
+  --background: #ffffff;
+  --foreground: #2b2622;
+  --card: #ffffff;
+  --card-foreground: #2b2622;
+  --popover: #ffffff;
+  --popover-foreground: #2b2622;
+  --primary: #2b2622;
+  --primary-foreground: #faf8f5;
+  --secondary: #f2eee8;
+  --secondary-foreground: #2b2622;
+  --muted: #f2eee8;
+  --muted-foreground: #7d7264;
+  --accent: #fae8df;
+  --accent-foreground: #8b4227;
   --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
+  --border: #e5ddd1;
+  --input: #e5ddd1;
+  --ring: #da8863;
+  --chart-1: #c2643b;
+  --chart-2: #7d9070;
+  --chart-3: #a79a88;
+  --chart-4: #8b4227;
+  --chart-5: #4e5c48;
   --radius: 0.625rem;
   --sidebar: oklch(0.985 0 0);
   --sidebar-foreground: oklch(0.145 0 0);
@@ -43,18 +43,37 @@
 }
 
 ::selection {
-  background-color: #ccfbf1;
-  color: #134e4a;
+  background-color: #fae8df;
+  color: #8b4227;
 }
 
 body {
   margin: 0;
   min-height: 100vh;
   font-family: var(--font-sans);
-  color: #0f172a;
-  background-color: #f6f4ee;
+  color: #2b2622;
+  background-color: #f7f3ec;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+/* Mode lansia memperbesar teks pada komponen yang dipakai ulang (RppgMeasure,
+   Copilot) tanpa menduplikasi layoutnya.
+   ponytail: bergantung pada nama kelas utilitas Tailwind; kalau kelasnya
+   berubah, ganti dengan komponen khusus lansia. */
+.elderly-ui .text-xs,
+.elderly-ui .text-\[11px\],
+.elderly-ui .text-\[10px\] {
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+.elderly-ui .text-sm {
+  font-size: 1.05rem;
+  line-height: 1.55;
+}
+.elderly-ui button,
+.elderly-ui a {
+  min-height: 2.75rem;
 }
 
 #root {
@@ -62,6 +81,59 @@ body {
   min-height: 100svh;
   display: flex;
   flex-direction: column;
+}
+
+@theme {
+  /* Palet Terakota & Sage — ink (netral hangat), clay (aksen), sage (aksen kedua) */
+  --color-sand: #f7f3ec;
+
+  --color-ink-50: #faf8f5;
+  --color-ink-100: #f2eee8;
+  --color-ink-200: #e5ddd1;
+  --color-ink-300: #d3c8b8;
+  --color-ink-400: #a79a88;
+  --color-ink-500: #7d7264;
+  --color-ink-600: #5e554a;
+  --color-ink-700: #47403a;
+  --color-ink-800: #332e29;
+  --color-ink-900: #2b2622;
+  --color-ink-950: #1a1714;
+
+  --color-sepia-50: #faf8f5;
+  --color-sepia-100: #f2eee8;
+  --color-sepia-200: #e5ddd1;
+  --color-sepia-300: #d3c8b8;
+  --color-sepia-400: #a79a88;
+  --color-sepia-500: #7d7264;
+  --color-sepia-600: #5e554a;
+  --color-sepia-700: #47403a;
+  --color-sepia-800: #332e29;
+  --color-sepia-900: #2b2622;
+  --color-sepia-950: #1a1714;
+
+  --color-clay-50: #fdf5f1;
+  --color-clay-100: #fae8df;
+  --color-clay-200: #f3cfbd;
+  --color-clay-300: #e9ae92;
+  --color-clay-400: #da8863;
+  --color-clay-500: #c2643b;
+  --color-clay-600: #a9532f;
+  --color-clay-700: #8b4227;
+  --color-clay-800: #6f3620;
+  --color-clay-900: #5a2d1c;
+  --color-clay-950: #33170e;
+
+  --color-sage-50: #f4f7f2;
+  --color-sage-100: #e6ede2;
+  --color-sage-200: #cddac6;
+  --color-sage-300: #adc0a3;
+  --color-sage-400: #8ca37f;
+  --color-sage-500: #7d9070;
+  --color-sage-600: #62755a;
+  --color-sage-700: #4e5c48;
+  --color-sage-800: #3e4a3a;
+  --color-sage-900: #333d31;
+  --color-sage-950: #1b211a;
 }
 
 @theme inline {

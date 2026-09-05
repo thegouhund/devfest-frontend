@@ -1,10 +1,21 @@
-import React, { createContext, useContext, useState, useCallback } from 'react'
+import React, { createContext, useContext, useState, useCallback, useEffect } from 'react'
+import { ApiError } from '@/lib/api'
+import {
+  getConversation,
+  listConversations,
+  postChat,
+  type ChatServerMessage,
+} from '@/lib/health-api'
+import { useAuth } from './AuthContext'
 
 export interface ChatMessage {
   id: string
   sender: 'ai' | 'user'
   text: string
   time: string
+  /** Pesan sistem dibuat lokal (mis. "aktivitas dicatat") dan tidak ikut
+   *  tersimpan di percakapan server. */
+  isSystem?: boolean
 }
 
 interface ChatContextType {
@@ -28,7 +39,6 @@ export interface Conversation {
   id: string
   title: string
   time: string
-  messages: ChatMessage[]
 }
 
 const greeting: ChatMessage = {
@@ -40,41 +50,79 @@ const greeting: ChatMessage = {
 
 const ChatContext = createContext<ChatContextType | undefined>(undefined)
 
+const timeOf = (iso?: string | null) => {
+  const d = iso ? new Date(iso) : new Date()
+  return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')} WIB`
+}
+
+const toChatMessage = (msg: ChatServerMessage, index: number): ChatMessage => ({
+  id: `${msg.created_at ?? index}-${index}`,
+  sender: msg.role === 'assistant' ? 'ai' : 'user',
+  text: msg.content,
+  time: timeOf(msg.created_at),
+})
+
 export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { status } = useAuth()
   const [isChatOpen, setIsChatOpen] = useState<boolean>(false)
   const [unreadCount, setUnreadCount] = useState<number>(0)
   const [isAiTyping, setIsAiTyping] = useState<boolean>(false)
 
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([greeting])
   const [conversations, setConversations] = useState<Conversation[]>([])
+  /** null berarti pesan berikutnya memulai percakapan baru di server. */
+  const [conversationId, setConversationId] = useState<string | null>(null)
 
-  const resetChat = useCallback(() => {
+  const refreshConversations = useCallback(async () => {
+    try {
+      const { conversations: list } = await listConversations()
+      setConversations(
+        list.map((c) => ({
+          id: c.id,
+          title: c.summary ?? `Percakapan ${timeOf(c.started_at)}`,
+          time: timeOf(c.started_at),
+        }))
+      )
+    } catch {
+      /* daftar riwayat bersifat pelengkap; kegagalannya tidak memblokir chat */
+    }
+  }, [])
+
+  // Riwayat hanya bisa diambil setelah token menunjuk profil.
+  useEffect(() => {
+    if (status !== 'ready') {
+      setConversations([])
+      setChatMessages([greeting])
+      setConversationId(null)
+      return
+    }
+    void refreshConversations()
+  }, [status, refreshConversations])
+
+  const startNewThread = useCallback(() => {
     setChatMessages([greeting])
+    setConversationId(null)
     setIsAiTyping(false)
   }, [])
 
-  // Arsipkan sesi berjalan (kalau ada pertanyaan) lalu mulai sesi kosong
-  const newConversation = useCallback(() => {
-    setChatMessages((current) => {
-      const firstPrompt = current.find((m) => m.sender === 'user')
-      if (firstPrompt) {
-        setConversations((prev) => [
-          { id: Date.now().toString(), title: firstPrompt.text, time: firstPrompt.time, messages: current },
-          ...prev,
-        ])
-      }
-      return [greeting]
-    })
+  const loadConversation = useCallback(async (id: string) => {
     setIsAiTyping(false)
-  }, [])
-
-  const loadConversation = useCallback((id: string) => {
-    setConversations((prev) => {
-      const target = prev.find((c) => c.id === id)
-      if (target) setChatMessages(target.messages)
-      return prev
-    })
-    setIsAiTyping(false)
+    try {
+      const detail = await getConversation(id)
+      setChatMessages(detail.messages.map(toChatMessage))
+      setConversationId(detail.id)
+    } catch {
+      setChatMessages([
+        greeting,
+        {
+          id: `load-error-${Date.now()}`,
+          sender: 'ai',
+          text: 'Percakapan ini tidak dapat dimuat.',
+          time: timeOf(),
+          isSystem: true,
+        },
+      ])
+    }
   }, [])
 
   const openChat = useCallback(() => {
@@ -94,12 +142,14 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
     })
   }, [])
 
+  // Notifikasi lokal (aktivitas dicatat, pengukuran selesai). Tidak dikirim ke
+  // server, jadi hanya tampil sampai percakapan dimuat ulang.
   const addAiMessage = useCallback((text: string, openIfClosed: boolean = false) => {
-    const now = new Date()
-    const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')} WIB`
+    const timeStr = timeOf()
 
     const aiMsg: ChatMessage = {
-      id: Date.now().toString(),
+      id: `system-${Date.now()}`,
+      isSystem: true,
       sender: 'ai',
       text,
       time: timeStr,
@@ -120,57 +170,56 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   }, [])
 
-  const sendMessage = useCallback((textToSend: string) => {
-    const text = textToSend.trim()
-    if (!text) return
+  const sendMessage = useCallback(
+    async (textToSend: string) => {
+      const text = textToSend.trim()
+      if (!text) return
 
-    const now = new Date()
-    const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')} WIB`
-
-    const userMsg: ChatMessage = {
-      id: Date.now().toString(),
-      sender: 'user',
-      text,
-      time: timeStr,
-    }
-
-    setChatMessages((prev) => [...prev, userMsg])
-    setIsAiTyping(true)
-
-    // Simulated intelligent responses
-    setTimeout(() => {
-      let reply =
-        'Terima kasih atas pertanyaannya. Berdasarkan pantauan data rPPG harian, parameter vital Anda berada dalam batas stabil dan normal. Tetap cukupi cairan dan luangkan waktu relaksasi.'
-
-      const lower = text.toLowerCase()
-      if (lower.includes('baseline') || lower.includes('normal')) {
-        reply =
-          'Baseline denyut jantung istirahat Anda adalah 69 BPM dengan rentang sehat 60-80 BPM. Nilai saat ini menunjukkan kondisi kardiovaskular yang stabil dan tenang.'
-      } else if (lower.includes('napas') || lower.includes('pernapasan') || lower.includes('relaksasi')) {
-        reply =
-          'Laju pernapasan normal rileks adalah 12-20 bpm. Jika merasa tegang, cobalah teknik pernapasan 4-7-8: tarik napas 4 detik, tahan 7 detik, lalu hembuskan perlahan 8 detik.'
-      } else if (lower.includes('kopi') || lower.includes('kafein')) {
-        reply =
-          'Kafein menstimulasi sistem saraf simpatis selama 1-2 jam pertama. Lonjakan sesaat adalah respon alami tubuh, dan nilai HRV Anda tetap mencerminkan pemulihan otonom yang prima.'
-      } else if (lower.includes('rppg') || lower.includes('kamera') || lower.includes('cara kerja')) {
-        reply =
-          'Teknologi rPPG (remote photoplethysmography) menangkap perubahan mikroskopis pantulan spektrum warna kulit wajah akibat pulsasi darah mikrovaskular di setiap detak jantung lewat webcam biasa.'
-      } else if (lower.includes('keluarga') || lower.includes('anak') || lower.includes('orang tua')) {
-        reply =
-          'Anda dapat memantau kesehatan seluruh anggota keluarga dengan memilih profil di dropdown kanan atas. Setiap profil memiliki riwayat dan ambang batas baseline yang disesuaikan usia.'
+      const userMsg: ChatMessage = {
+        id: `local-${Date.now()}`,
+        sender: 'user',
+        text,
+        time: timeOf(),
       }
+      setChatMessages((prev) => [...prev, userMsg])
+      setIsAiTyping(true)
 
-      const aiReply: ChatMessage = {
-        id: (Date.now() + 1).toString(),
-        sender: 'ai',
-        text: reply,
-        time: `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')} WIB`,
+      try {
+        const res = await postChat(text, conversationId)
+        setChatMessages((prev) => [
+          ...prev,
+          { id: `reply-${Date.now()}`, sender: 'ai', text: res.reply, time: timeOf() },
+        ])
+
+        // Percakapan baru: simpan id-nya dan segarkan daftar riwayat.
+        if (res.conversation_id !== conversationId) {
+          setConversationId(res.conversation_id)
+          void refreshConversations()
+        }
+      } catch (error) {
+        // 503 berarti layanan AI sedang mati — gangguan sementara, bukan error
+        // aplikasi; endpoint lain tetap berjalan normal.
+        const unavailable = error instanceof ApiError && error.status === 503
+        setChatMessages((prev) => [
+          ...prev,
+          {
+            id: `error-${Date.now()}`,
+            sender: 'ai',
+            text: unavailable
+              ? 'Asisten sedang tidak tersedia untuk sementara. Coba lagi beberapa saat lagi.'
+              : error instanceof ApiError
+              ? error.message
+              : 'Pesan gagal terkirim.',
+            time: timeOf(),
+            isSystem: true,
+          },
+        ])
+      } finally {
+        setIsAiTyping(false)
       }
-
-      setChatMessages((prev) => [...prev, aiReply])
-      setIsAiTyping(false)
-    }, 600)
-  }, [])
+    },
+    [conversationId, refreshConversations]
+  )
 
   return (
     <ChatContext.Provider
@@ -185,9 +234,9 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
         unreadCount,
         sendMessage,
         addAiMessage,
-        resetChat,
+        resetChat: startNewThread,
         conversations,
-        newConversation,
+        newConversation: startNewThread,
         loadConversation,
       }}
     >

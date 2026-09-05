@@ -60,15 +60,59 @@ export const formatDateID = (iso: string) =>
     year: 'numeric',
   })
 
-export const createActivity = (input: NewActivityInput): ActivityItem => {
-  const [hour, minute] = input.time.split(':').map(Number)
+const categoryToApi: Record<ActivityCategory, string> = {
+  kopi: 'coffee',
+  olahraga: 'exercise',
+  tidur: 'sleep',
+  makan: 'meal',
+  rokok: 'smoking',
+  alkohol: 'alcohol',
+  lainnya: 'other',
+}
+
+const categoryFromApi: Record<string, ActivityCategory> = Object.fromEntries(
+  Object.entries(categoryToApi).map(([id, api]) => [api, id as ActivityCategory])
+)
+
+export const toApiCategory = (category: ActivityCategory) => categoryToApi[category]
+export const fromApiCategory = (category: string): ActivityCategory =>
+  categoryFromApi[category] ?? 'lainnya'
+
+// ponytail: backend hanya punya satu kolom teks bebas (`note`), sedangkan form
+// memisahkan nama aktivitas dan keterangan. Keduanya digabung dengan pemisah
+// ini dan dipecah lagi saat dibaca. Kalau backend menambah kolom judul, ganti
+// dua fungsi di bawah dan hapus pemisahnya.
+const NOTE_SEPARATOR = ' · '
+
+export const buildNote = (input: NewActivityInput): string | null => {
+  const title = input.title?.trim()
+  const detail = input.detail.trim()
+  const named = title && title !== labelFor(input.category) ? title : ''
+  return [named, detail].filter(Boolean).join(NOTE_SEPARATOR) || null
+}
+
+export const parseNote = (note: string | null, category: ActivityCategory) => {
+  if (!note) return { title: labelFor(category), detail: '' }
+  const index = note.indexOf(NOTE_SEPARATOR)
+  if (index === -1) return { title: labelFor(category), detail: note }
   return {
-    id: Date.now().toString(),
-    category: input.category,
-    title: input.title?.trim() || labelFor(input.category),
-    detail: input.detail.trim() || 'Dicatat via Quick Logger',
-    date: input.date,
-    time: `${input.time} WIB`,
-    timestamp: hour + minute / 60,
+    title: note.slice(0, index),
+    detail: note.slice(index + NOTE_SEPARATOR.length),
+  }
+}
+
+/** `date` + `time` lokal menjadi satu titik waktu ISO UTC untuk `occurred_at`. */
+export const toOccurredAt = (input: NewActivityInput) =>
+  new Date(`${input.date}T${input.time}:00`).toISOString()
+
+export const fromOccurredAt = (
+  occurredAt: string | null
+): Pick<ActivityItem, 'date' | 'time' | 'timestamp'> => {
+  const when = occurredAt ? new Date(occurredAt) : new Date()
+  const pad = (n: number) => String(n).padStart(2, '0')
+  return {
+    date: `${when.getFullYear()}-${pad(when.getMonth() + 1)}-${pad(when.getDate())}`,
+    time: `${pad(when.getHours())}:${pad(when.getMinutes())} WIB`,
+    timestamp: when.getHours() + when.getMinutes() / 60,
   }
 }
