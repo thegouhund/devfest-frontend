@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react'
 import { Badge } from '@/components/ui/badge'
+import { MessageCircle, X, SendHorizontal } from 'lucide-react'
 import { useChat } from '../context/ChatContext'
 
 export const FloatingChatbot: React.FC = () => {
@@ -63,15 +64,7 @@ export const FloatingChatbot: React.FC = () => {
             </span>
           )}
 
-          <svg
-            className="w-4 h-4 text-teal-300 ml-0.5 group-hover:translate-x-0.5 transition-transform"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-            strokeWidth="2.5"
-          >
-            <path strokeLinecap="round" strokeLinejoin="round" d="M8 10h.01M12 10h.01M16 10h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-          </svg>
+          <MessageCircle className="w-4 h-4 text-teal-300 ml-0.5 group-hover:translate-x-0.5 transition-transform" />
         </button>
       )}
 
@@ -112,9 +105,7 @@ export const FloatingChatbot: React.FC = () => {
                   aria-label="Tutup Chat"
                   className="p-1.5 rounded-xl hover:bg-white/15 text-stone-300 hover:text-white transition cursor-pointer"
                 >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                  </svg>
+                  <X className="w-4 h-4" />
                 </button>
               </div>
             </div>
@@ -208,9 +199,7 @@ export const FloatingChatbot: React.FC = () => {
                 disabled={!inputMessage.trim()}
                 className="p-2.5 rounded-xl bg-teal-400 hover:bg-teal-300 text-teal-950 font-bold transition disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer shrink-0"
               >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3" />
-                </svg>
+                <SendHorizontal className="w-4 h-4" />
               </button>
             </form>
           </div>

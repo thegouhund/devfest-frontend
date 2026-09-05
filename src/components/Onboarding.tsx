@@ -6,6 +6,7 @@ import { Chip } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { TextField, FieldError } from '@/components/ui/field'
+import { Check, Video, ChevronRight, AlertTriangle } from 'lucide-react'
 
 export interface OnboardingData {
   // Step 1: Signup
@@ -138,20 +139,8 @@ export const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
       {/* Top Header & Brand */}
       <header className="max-w-3xl w-full mx-auto flex items-center justify-between pb-6 pt-2">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-teal-800 text-white flex items-center justify-center font-bold text-lg shadow-xs">
-            <svg
-              className="w-5 h-5 text-white"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-              strokeWidth="2.3"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
-              />
-            </svg>
+          <div className="w-10 h-10 rounded-xl bg-white border border-slate-200/80 p-1 flex items-center justify-center text-lg shadow-xs overflow-hidden shrink-0">
+            <img src="/logo.png" alt="Nadiku Logo" className="w-full h-full object-contain" />
           </div>
           <div>
             <h1 className="text-base font-bold tracking-tight text-slate-900 leading-tight">
@@ -206,16 +195,7 @@ export const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
                         }`}
                       >
                         {isPassed ? (
-                          <svg
-                            className="w-4 h-4 stroke-current"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            strokeWidth="2.5"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                          >
-                            <polyline points="20 6 9 17 4 12" />
-                          </svg>
+                          <Check className="w-4 h-4 stroke-[2.5]" />
                         ) : (
                           step.id
                         )}
@@ -242,19 +222,7 @@ export const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
           {isCompleted ? (
             <div className="py-8 text-center space-y-4">
               <div className="w-16 h-16 bg-emerald-50 text-emerald-600 rounded-2xl mx-auto flex items-center justify-center border border-emerald-200">
-                <svg
-                  className="w-8 h-8"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                  strokeWidth="2"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M5 13l4 4L19 7"
-                  />
-                </svg>
+                <Check className="w-8 h-8 text-emerald-600 stroke-[2]" />
               </div>
               <h2 className="text-2xl font-bold text-slate-900">
                 Akun Berhasil Dikonfigurasi!
@@ -709,20 +677,8 @@ export const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
                     {/* Educational Card on rPPG */}
                     <div className="p-4 sm:p-5 bg-teal-50/60 border border-teal-200 rounded-2xl">
                       <div className="flex gap-3.5">
-                        <div className="w-8 h-8 rounded-lg bg-teal-700 text-white flex-shrink-0 flex items-center justify-center">
-                          <svg
-                            className="w-4 h-4 text-white"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                            strokeWidth="2"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"
-                            />
-                          </svg>
+                        <div className="w-8 h-8 rounded-lg bg-indigo-50 border border-indigo-100 text-indigo-600 flex-shrink-0 flex items-center justify-center">
+                          <Video className="w-4 h-4 text-indigo-600" />
                         </div>
                         <div className="space-y-1">
                           <h3 className="text-xs font-bold text-teal-950 uppercase tracking-wide">
@@ -741,8 +697,8 @@ export const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
                     {/* Non-Diagnostic Medical Disclaimer */}
                     <div className="p-4 sm:p-5 bg-amber-50/70 border border-amber-300/80 rounded-2xl">
                       <div className="flex gap-3.5">
-                        <div className="w-8 h-8 rounded-lg bg-amber-600 text-white flex-shrink-0 flex items-center justify-center font-bold text-sm">
-                          !
+                        <div className="w-8 h-8 rounded-lg bg-amber-100 border border-amber-200 text-amber-600 flex-shrink-0 flex items-center justify-center">
+                          <AlertTriangle className="w-4 h-4 text-amber-500" />
                         </div>
                         <div className="space-y-1">
                           <h3 className="text-xs font-bold text-amber-950 uppercase tracking-wide">
@@ -840,19 +796,7 @@ export const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
                   className="px-7 py-2.5 rounded-full text-xs font-bold tracking-wide bg-slate-900 hover:bg-slate-800 text-white flex items-center gap-2 transition-all duration-200 active:scale-95 shadow-xs cursor-pointer"
                 >
                   <span>{currentStep === 4 ? 'Selesai & Mulai' : 'Lanjutkan'}</span>
-                  <svg
-                    className="w-3.5 h-3.5"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                    strokeWidth="2.5"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      d="M9 5l7 7-7 7"
-                    />
-                  </svg>
+                  <ChevronRight className="w-3.5 h-3.5" />
                 </Button>
               </div>
             </div>

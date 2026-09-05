@@ -266,13 +266,13 @@ export const FamilyMonitoring: React.FC<FamilyMonitoringProps> = ({
           {/* Quick Metrics & Actions */}
           <div className="flex flex-wrap items-center gap-3">
             <div className="flex items-center gap-2 bg-white px-4 py-2.5 rounded-2xl border border-stone-200/80 shadow-2xs">
-              <Users className="w-4 h-4 text-slate-400" />
+              <Users className="w-4 h-4 text-purple-600" />
               <span className="text-xs text-slate-500 font-medium">Terpantau:</span>
               <span className="text-sm font-bold text-slate-900">{members.length} Orang</span>
               <span className="text-xs text-stone-300">|</span>
               {attentionCount > 0 ? (
                 <Badge variant="warning" className="text-xs font-bold px-2 py-0.5">
-                  <AlertTriangle className="w-3 h-3 mr-0.5" />
+                  <AlertTriangle className="w-3 h-3 mr-0.5 text-amber-500" />
                   {attentionCount} Perlu Perhatian
                 </Badge>
               ) : (
@@ -424,7 +424,7 @@ export const FamilyMonitoring: React.FC<FamilyMonitoringProps> = ({
                     onClick={() => handleSendReminder(member)}
                     className="text-xs font-semibold px-3 py-1.5 rounded-full border-stone-200 hover:border-teal-700 hover:bg-teal-50/50 text-slate-700 cursor-pointer flex items-center gap-1.5"
                   >
-                    <Bell className="w-3.5 h-3.5 text-teal-700" />
+                    <Bell className="w-3.5 h-3.5 text-amber-500" />
                     Kirim Pengingat
                   </Button>
 
@@ -434,7 +434,7 @@ export const FamilyMonitoring: React.FC<FamilyMonitoringProps> = ({
                       onClick={() => onMeasureMember(member)}
                       className="text-xs font-bold px-4 py-1.5 rounded-full bg-slate-900 text-white hover:bg-slate-800 shadow-2xs cursor-pointer flex items-center gap-1.5"
                     >
-                      <Video className="w-3.5 h-3.5 text-teal-300" />
+                      <Video className="w-3.5 h-3.5 text-indigo-400" />
                       Ukur rPPG
                     </Button>
                   )}
@@ -560,7 +560,7 @@ export const FamilyMonitoring: React.FC<FamilyMonitoringProps> = ({
                   {/* Context Health Note in Zone 1 */}
                   <div className="pt-2 border-t border-stone-200/60 flex items-center justify-between text-[11px] text-slate-500">
                     <span className="flex items-center gap-1.5 text-left">
-                      <Sparkles className="w-3.5 h-3.5 text-teal-600 shrink-0" />
+                      <Sparkles className="w-3.5 h-3.5 text-amber-500 shrink-0" />
                       {member.healthNote}
                     </span>
                     <span className="font-mono text-slate-400 shrink-0 ml-2 hidden sm:inline">
@@ -756,7 +756,7 @@ export const FamilyMonitoring: React.FC<FamilyMonitoringProps> = ({
               </div>
 
               <div className="p-3 rounded-xl bg-teal-50/80 border border-teal-100 text-[11px] text-teal-900 leading-relaxed flex items-start gap-2">
-                <Sparkles className="w-4 h-4 text-teal-600 shrink-0 mt-0.5" />
+                <Sparkles className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
                 <span>
                   Pengukuran rPPG keluarga dapat dilakukan kapan saja tanpa login akun terpisah. Cukup pilih profil anggota saat pengukuran.
                 </span>

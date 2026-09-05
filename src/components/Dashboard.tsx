@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useMemo } from 'react'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Button, ButtonGroup } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
@@ -7,6 +7,16 @@ import { Switch } from '@/components/ui/switch'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { TextField } from '@/components/ui/field'
+import { Calendar } from '@/components/ui/calendar'
+import type { DateRange } from 'react-day-picker'
+import {
+  Table,
+  TableHeader,
+  TableBody,
+  TableRow,
+  TableHead,
+  TableCell,
+} from '@/components/ui/table'
 import {
   Dialog,
   DialogContent,
@@ -28,8 +38,8 @@ import {
   ChevronDown,
   ArrowUpRight,
   Check,
+  Plus,
 } from 'lucide-react'
-import vitalMonitoringIllustration from '../assets/illustrations/vital-monitoring.svg'
 import { useChat } from '../context/ChatContext'
 import FamilyMonitoring from './FamilyMonitoring'
 
@@ -70,10 +80,37 @@ const currentUser: UserProfile = {
   signalQuality: 98,
 }
 
+// Mock multi-scale datasets
+const hourlyData = [
+  { time: '06:00', hr: 68, hrv: 55, rr: 14, label: '06:00' },
+  { time: '07:00', hr: 70, hrv: 53, rr: 15, label: '07:00' },
+  { time: '08:00', hr: 74, hrv: 48, rr: 16, label: '08:00' },
+  { time: '09:00', hr: 78, hrv: 45, rr: 17, label: '09:00' },
+  { time: '10:00', hr: 76, hrv: 47, rr: 16, label: '10:00' },
+  { time: '11:00', hr: 72, hrv: 52, rr: 15, label: '11:00' },
+  { time: '12:00', hr: 73, hrv: 51, rr: 15, label: '12:00' },
+  { time: '13:00', hr: 75, hrv: 49, rr: 16, label: '13:00' },
+  { time: '14:00', hr: 71, hrv: 53, rr: 15, label: '14:00' },
+]
+
+const weeklyData = [
+  { time: 'Senin', hr: 70, hrv: 52, rr: 15, label: 'Sen (1)' },
+  { time: 'Selasa', hr: 73, hrv: 50, rr: 16, label: 'Sel (2)' },
+  { time: 'Rabu', hr: 71, hrv: 54, rr: 15, label: 'Rab (3)' },
+  { time: 'Kamis', hr: 75, hrv: 48, rr: 16, label: 'Kam (4)' },
+  { time: 'Jumat', hr: 72, hrv: 53, rr: 15, label: 'Jum (5)' },
+  { time: 'Sabtu', hr: 68, hrv: 57, rr: 14, label: 'Sab (6)' },
+  { time: 'Minggu', hr: 71, hrv: 55, rr: 15, label: 'Min (7)' },
+]
+
 export const Dashboard: React.FC = () => {
   const { addAiMessage } = useChat()
   const [activeNav, setActiveNav] = useState<string>('dashboard')
-  const [timeRange, setTimeRange] = useState<'harian' | 'mingguan' | 'bulanan'>('harian')
+  const [timeRange, setTimeRange] = useState<'harian' | 'mingguan' | 'bulanan'>('mingguan')
+  const [dateRange, setDateRange] = useState<DateRange | undefined>({
+    from: new Date(2026, 8, 1),
+    to: new Date(2026, 8, 7),
+  })
   const [isTimeDropdownOpen, setIsTimeDropdownOpen] = useState(false)
   const [showActivityOverlay, setShowActivityOverlay] = useState(true)
   const [showHrvComparison, setShowHrvComparison] = useState(true)
@@ -117,39 +154,55 @@ export const Dashboard: React.FC = () => {
       timestamp: 10.0,
     },
   ])
+  // Dynamic series based on selected calendar date range
+  const currentChartData = useMemo(() => {
+    if (!dateRange?.from) {
+      return weeklyData
+    }
 
-  // Mock multi-scale datasets
-  const hourlyData = [
-    { time: '06:00', hr: 68, hrv: 55, rr: 14, label: '06:00' },
-    { time: '07:00', hr: 70, hrv: 53, rr: 15, label: '07:00' },
-    { time: '08:00', hr: 74, hrv: 48, rr: 16, label: '08:00' },
-    { time: '09:00', hr: 78, hrv: 45, rr: 17, label: '09:00' },
-    { time: '10:00', hr: 76, hrv: 47, rr: 16, label: '10:00' },
-    { time: '11:00', hr: 72, hrv: 52, rr: 15, label: '11:00' },
-    { time: '12:00', hr: 73, hrv: 51, rr: 15, label: '12:00' },
-    { time: '13:00', hr: 75, hrv: 49, rr: 16, label: '13:00' },
-    { time: '14:00', hr: 71, hrv: 53, rr: 15, label: '14:00' },
-  ]
+    // Single day selected -> show hourly curve
+    if (!dateRange.to || dateRange.from.getTime() === dateRange.to.getTime()) {
+      return hourlyData
+    }
 
-  const weeklyData = [
-    { time: 'Senin', hr: 70, hrv: 52, rr: 15, label: 'Sen' },
-    { time: 'Selasa', hr: 73, hrv: 50, rr: 16, label: 'Sel' },
-    { time: 'Rabu', hr: 71, hrv: 54, rr: 15, label: 'Rab' },
-    { time: 'Kamis', hr: 75, hrv: 48, rr: 16, label: 'Kam' },
-    { time: 'Jumat', hr: 72, hrv: 53, rr: 15, label: 'Jum' },
-    { time: 'Sabtu', hr: 68, hrv: 57, rr: 14, label: 'Sab' },
-    { time: 'Minggu', hr: 71, hrv: 55, rr: 15, label: 'Min' },
-  ]
+    const diffTime = Math.abs(dateRange.to.getTime() - dateRange.from.getTime())
+    const diffDays = Math.min(Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1, 31)
 
-  const monthlyData = [
-    { time: 'Mgg 1', hr: 71, hrv: 53, rr: 15, label: 'Mgg 1' },
-    { time: 'Mgg 2', hr: 73, hrv: 51, rr: 16, label: 'Mgg 2' },
-    { time: 'Mgg 3', hr: 70, hrv: 54, rr: 15, label: 'Mgg 3' },
-    { time: 'Mgg 4', hr: 72, hrv: 52, rr: 15, label: 'Mgg 4' },
-  ]
+    const result = []
+    const start = new Date(Math.min(dateRange.from.getTime(), dateRange.to.getTime()))
+    const baseHR = 70
+    const baseHRV = 52
 
-  const currentChartData =
-    timeRange === 'harian' ? hourlyData : timeRange === 'mingguan' ? weeklyData : monthlyData
+    for (let i = 0; i < diffDays; i++) {
+      const cur = new Date(start)
+      cur.setDate(start.getDate() + i)
+      const dayNum = cur.getDate()
+      const dayName = cur.toLocaleDateString('id-ID', { weekday: 'short' })
+      const monthName = cur.toLocaleDateString('id-ID', { month: 'short' })
+
+      const hrVar = Math.round(Math.sin(dayNum * 1.6) * 4.5 + (dayNum % 3) * 1.5)
+      const hrvVar = Math.round(Math.cos(dayNum * 1.4) * 6 - (dayNum % 2) * 2)
+
+      result.push({
+        time: `${dayNum} ${monthName}`,
+        label: diffDays <= 7 ? `${dayName} (${dayNum})` : `${dayNum} ${monthName}`,
+        hr: Math.max(58, Math.min(88, baseHR + hrVar)),
+        hrv: Math.max(38, Math.min(68, baseHRV + hrvVar)),
+        rr: 15 + (dayNum % 3),
+      })
+    }
+    return result
+  }, [dateRange])
+
+  const formattedRangeLabel = useMemo(() => {
+    if (!dateRange?.from) return 'Pilih Rentang'
+    const fromStr = dateRange.from.toLocaleDateString('id-ID', { day: 'numeric', month: 'short' })
+    if (!dateRange.to || dateRange.from.getTime() === dateRange.to.getTime()) {
+      return `${fromStr} 2026 (Harian)`
+    }
+    const toStr = dateRange.to.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })
+    return `${fromStr} - ${toStr}`
+  }, [dateRange])
 
   const categories = [
     { key: 'kopi', label: 'Kopi', icon: '☕' },
@@ -191,16 +244,16 @@ export const Dashboard: React.FC = () => {
       <div className="w-full max-w-[98vw] 2xl:max-w-[1920px] mx-auto space-y-6">
         {/* 1. TOP APP BAR / BRAND HEADER */}
         <header className="flex flex-col md:flex-row items-center justify-between gap-4 bg-white border border-slate-200/80 rounded-2xl sm:rounded-3xl px-5 py-3.5 shadow-xs">
-          {/* Brand Logo with heart symbol */}
+          {/* Brand Logo with official logo image */}
           <div className="flex items-center gap-3 self-start md:self-auto">
-            <div className="w-10 h-10 rounded-xl bg-indigo-600 text-white flex items-center justify-center font-bold shadow-xs">
-              <Heart className="w-5 h-5 fill-white" />
+            <div className="w-10 h-10 rounded-xl bg-white border border-slate-200/80 p-1 flex items-center justify-center shadow-xs overflow-hidden shrink-0">
+              <img src="/logo.png" alt="Nadiku Logo" className="w-full h-full object-contain" />
             </div>
             <div>
               <span className="text-lg font-extrabold text-slate-900 tracking-tight block leading-tight">
                 Nadiku
               </span>
-              <span className="text-xs text-indigo-600 font-semibold tracking-wide uppercase">
+              <span className="text-xs text-rose-600 font-semibold tracking-wide uppercase">
                 Family Health Monitor
               </span>
             </div>
@@ -263,14 +316,14 @@ export const Dashboard: React.FC = () => {
                 className="w-8 h-8 rounded-full flex items-center justify-center text-slate-500 hover:text-slate-900 hover:bg-white transition cursor-pointer"
                 aria-label="Mode Terang"
               >
-                <Sun className="w-4 h-4" />
+                <Sun className="w-4 h-4 text-amber-500" />
               </button>
               <button
                 type="button"
                 className="relative w-8 h-8 rounded-full flex items-center justify-center text-slate-500 hover:text-slate-900 hover:bg-white transition cursor-pointer"
                 aria-label="Notifikasi"
               >
-                <Bell className="w-4 h-4" />
+                <Bell className="w-4 h-4 text-amber-500" />
                 <span className="w-2 h-2 rounded-full bg-rose-500 absolute top-1.5 right-1.5" />
               </button>
             </div>
@@ -326,16 +379,8 @@ export const Dashboard: React.FC = () => {
 
                   <div className="flex items-center gap-2 self-start sm:self-auto">
                     <Chip size="sm" color="success" variant="soft" className="font-semibold text-xs">
-                      Sinyal rPPG {currentUser.signalQuality}%
+                      ● Sinyal Kamera {currentUser.signalQuality}% (Stabil)
                     </Chip>
-                    <Button
-                      size="sm"
-                      onClick={() => setIsMeasureModalOpen(true)}
-                      className="bg-indigo-600 hover:bg-indigo-700 text-white rounded-full font-bold px-4 py-2 shadow-xs cursor-pointer flex items-center gap-1.5 text-xs"
-                    >
-                      <Video className="w-3.5 h-3.5" />
-                      Ukur Sekarang
-                    </Button>
                   </div>
                 </div>
 
@@ -396,11 +441,11 @@ export const Dashboard: React.FC = () => {
 
                 {/* ROW: 4 DEFINED KEY METRIC CARDS (FOLLOWING REFERENCE IMAGE STYLE) */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                  {/* Card 1: Detak Jantung (Indigo Squircle) */}
+                  {/* Card 1: Detak Jantung (Rose/Merah Muda Squircle - Heart) */}
                   <Card className="p-5 rounded-2xl bg-white border border-slate-200/80 shadow-xs hover:shadow-md transition-shadow space-y-3">
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-xl bg-indigo-50 border border-indigo-100/80 flex items-center justify-center text-indigo-600 shrink-0">
-                        <Heart className="w-5 h-5 fill-indigo-100" />
+                      <div className="w-10 h-10 rounded-xl bg-rose-50 border border-rose-100/80 flex items-center justify-center text-rose-500 shrink-0">
+                        <Heart className="w-5 h-5 fill-rose-100 text-rose-500" />
                       </div>
                       <div className="text-left">
                         <span className="text-xs font-semibold text-slate-500 block">
@@ -424,11 +469,11 @@ export const Dashboard: React.FC = () => {
                     </div>
                   </Card>
 
-                  {/* Card 2: Variabilitas HRV (Emerald Squircle) */}
+                  {/* Card 2: Variabilitas HRV (Sky Blue Squircle - Activity) */}
                   <Card className="p-5 rounded-2xl bg-white border border-slate-200/80 shadow-xs hover:shadow-md transition-shadow space-y-3">
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-xl bg-emerald-50 border border-emerald-100/80 flex items-center justify-center text-emerald-600 shrink-0">
-                        <Activity className="w-5 h-5" />
+                      <div className="w-10 h-10 rounded-xl bg-sky-50 border border-sky-100/80 flex items-center justify-center text-sky-600 shrink-0">
+                        <Activity className="w-5 h-5 text-sky-600" />
                       </div>
                       <div className="text-left">
                         <span className="text-xs font-semibold text-slate-500 block">
@@ -452,11 +497,11 @@ export const Dashboard: React.FC = () => {
                     </div>
                   </Card>
 
-                  {/* Card 3: Laju Pernapasan (Amber Squircle) */}
+                  {/* Card 3: Laju Pernapasan (Teal Squircle - Wind) */}
                   <Card className="p-5 rounded-2xl bg-white border border-slate-200/80 shadow-xs hover:shadow-md transition-shadow space-y-3">
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-xl bg-amber-50 border border-amber-100/80 flex items-center justify-center text-amber-600 shrink-0">
-                        <Wind className="w-5 h-5" />
+                      <div className="w-10 h-10 rounded-xl bg-teal-50 border border-teal-100/80 flex items-center justify-center text-teal-600 shrink-0">
+                        <Wind className="w-5 h-5 text-teal-600" />
                       </div>
                       <div className="text-left">
                         <span className="text-xs font-semibold text-slate-500 block">
@@ -480,89 +525,53 @@ export const Dashboard: React.FC = () => {
                     </div>
                   </Card>
 
-                  {/* Card 4: Kualitas Sinyal rPPG (Rose Squircle) */}
-                  <Card className="p-5 rounded-2xl bg-white border border-slate-200/80 shadow-xs hover:shadow-md transition-shadow space-y-3">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-xl bg-rose-50 border border-rose-100/80 flex items-center justify-center text-rose-600 shrink-0">
-                        <Video className="w-5 h-5" />
+                  {/* Card 4: TOMBOL CTA MULAI UKUR rPPG (Sesuai Posisi & Ukuran Sketsa User) */}
+                  <Card
+                    onClick={() => {
+                      setTargetMeasureMember(null)
+                      setIsMeasureModalOpen(true)
+                    }}
+                    role="button"
+                    tabIndex={0}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        setTargetMeasureMember(null)
+                        setIsMeasureModalOpen(true)
+                      }
+                    }}
+                    className="p-5 rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white border border-indigo-500 shadow-xs hover:shadow-lg active:scale-[0.99] transition-all cursor-pointer flex flex-col justify-between group select-none space-y-3"
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="w-10 h-10 rounded-xl bg-white/20 border border-white/25 flex items-center justify-center text-white shrink-0 group-hover:scale-110 transition-transform">
+                        <Video className="w-5 h-5 text-white" />
                       </div>
-                      <div className="text-left">
-                        <span className="text-xs font-semibold text-slate-500 block">
-                          Kualitas Sinyal rPPG
-                        </span>
-                        <div className="flex items-baseline gap-1">
-                          <span className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight leading-none">
-                            {currentUser.signalQuality}%
-                          </span>
-                          <span className="text-xs font-semibold text-slate-400 uppercase">Kamera</span>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="flex items-center justify-between text-xs pt-1 border-t border-slate-100">
-                      <span className="text-emerald-600 font-semibold flex items-center gap-0.5">
-                        ↗ Stabil <span className="text-slate-400 font-normal">15 fps</span>
+                      <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-white/20 text-white border border-white/20 backdrop-blur-xs">
+                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-300 animate-pulse" />
+                        Sinyal {currentUser.signalQuality}%
                       </span>
-                      <Chip size="sm" color="success" variant="soft" className="font-bold text-[10px]">
-                        Sangat Baik
-                      </Chip>
+                    </div>
+
+                    <div className="text-left py-0.5">
+                      <span className="text-[11px] font-semibold text-indigo-200 block uppercase tracking-wider">
+                        Sensor Optik Kamera
+                      </span>
+                      <h3 className="text-xl font-extrabold text-white tracking-tight leading-tight mt-0.5 group-hover:text-indigo-100 transition-colors">
+                        Mulai Ukur rPPG
+                      </h3>
+                      <p className="text-xs text-indigo-100/85 mt-1">
+                        Pindai detak jantung & vital via webcam
+                      </p>
+                    </div>
+
+                    <div className="pt-2 border-t border-white/20 flex items-center justify-between text-xs font-bold text-white">
+                      <span className="flex items-center gap-1.5 text-indigo-100 group-hover:text-white">
+                        Buka Kamera Sekarang
+                      </span>
+                      <ArrowUpRight className="w-4 h-4 text-white group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
                     </div>
                   </Card>
                 </div>
               </div>
-
-              {/* HERO BANNER CARD WITH ILLUSTRATION */}
-              <Card className="relative overflow-hidden rounded-2xl sm:rounded-3xl bg-gradient-to-r from-indigo-50/70 via-white to-teal-50/50 border border-slate-200/80 p-5 sm:p-6 shadow-xs w-full">
-                <div className="flex flex-col md:flex-row items-center justify-between gap-6">
-                  <div className="space-y-2.5 z-10 max-w-xl text-left">
-                    <div className="inline-flex items-center gap-2 px-3 py-0.5 rounded-full bg-indigo-100/80 border border-indigo-200/80 text-indigo-900 text-xs font-bold">
-                      <span className="w-2 h-2 rounded-full bg-indigo-600 animate-pulse inline-block" />
-                      Sensor Optik Kamera (rPPG)
-                    </div>
-
-                    <h2 className="text-xl sm:text-2xl font-extrabold text-slate-900 tracking-tight leading-snug">
-                      Pantau Vital Sign Mandiri & Non-Invasif
-                    </h2>
-
-                    <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
-                      Ukur detak jantung, variabilitas (HRV), dan laju pernapasan secara otomatis hanya melalui pantulan cahaya mikrosirkulasi wajah di webcam — tanpa alat tambahan.
-                    </p>
-
-                    <div className="flex flex-wrap items-center gap-2.5 pt-1">
-                      <Button
-                        size="sm"
-                        onClick={() => setIsMeasureModalOpen(true)}
-                        className="bg-slate-900 text-white rounded-full font-bold px-5 py-2 shadow-xs hover:bg-slate-800 transition flex items-center gap-2 text-xs cursor-pointer"
-                      >
-                        <Video className="w-3.5 h-3.5 text-indigo-300" />
-                        Mulai Pengukuran rPPG
-                      </Button>
-
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => {
-                          addAiMessage(
-                            'Teknologi rPPG (remote photoplethysmography) bekerja dengan mendeteksi perubahan mikroskopis warna kulit akibat aliran darah per denyut jantung menggunakan webcam standar Anda. Cukup duduk tenang dengan pencahayaan cukup!',
-                            true
-                          )
-                        }}
-                        className="text-slate-700 hover:text-slate-900 rounded-full font-semibold text-xs px-4 cursor-pointer border-slate-200"
-                      >
-                        Pelajari Cara Kerja
-                        <ArrowUpRight className="w-3.5 h-3.5 ml-1 text-slate-400" />
-                      </Button>
-                    </div>
-                  </div>
-
-                  <div className="shrink-0 flex items-center justify-center p-1">
-                    <img
-                      src={vitalMonitoringIllustration}
-                      alt="Ilustrasi Pemantauan Data Vital"
-                      className="w-44 sm:w-52 md:w-60 h-auto max-h-44 object-contain"
-                    />
-                  </div>
-                </div>
-              </Card>
 
               {/* 2-COLUMN SECTION: STARTS LEVEL WITH DETAK JANTUNG */}
               <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start w-full">
@@ -606,7 +615,10 @@ export const Dashboard: React.FC = () => {
                           <Button
                             size="sm"
                             variant={timeRange === 'harian' ? 'default' : 'ghost'}
-                            onClick={() => setTimeRange('harian')}
+                            onClick={() => {
+                              setTimeRange('harian')
+                              setDateRange({ from: new Date(2026, 8, 5), to: new Date(2026, 8, 5) })
+                            }}
                             className={`px-3 py-1 rounded-full text-xs font-semibold ${
                               timeRange === 'harian'
                                 ? 'bg-white text-slate-900 shadow-xs font-bold'
@@ -618,7 +630,10 @@ export const Dashboard: React.FC = () => {
                           <Button
                             size="sm"
                             variant={timeRange === 'mingguan' ? 'default' : 'ghost'}
-                            onClick={() => setTimeRange('mingguan')}
+                            onClick={() => {
+                              setTimeRange('mingguan')
+                              setDateRange({ from: new Date(2026, 8, 1), to: new Date(2026, 8, 7) })
+                            }}
                             className={`px-3 py-1 rounded-full text-xs font-semibold ${
                               timeRange === 'mingguan'
                                 ? 'bg-white text-slate-900 shadow-xs font-bold'
@@ -630,7 +645,10 @@ export const Dashboard: React.FC = () => {
                           <Button
                             size="sm"
                             variant={timeRange === 'bulanan' ? 'default' : 'ghost'}
-                            onClick={() => setTimeRange('bulanan')}
+                            onClick={() => {
+                              setTimeRange('bulanan')
+                              setDateRange({ from: new Date(2026, 8, 1), to: new Date(2026, 8, 30) })
+                            }}
                             className={`px-3 py-1 rounded-full text-xs font-semibold ${
                               timeRange === 'bulanan'
                                 ? 'bg-white text-slate-900 shadow-xs font-bold'
@@ -643,119 +661,215 @@ export const Dashboard: React.FC = () => {
                       </div>
                     </div>
 
-                    {/* MUI X Line Chart */}
-                    <div className="w-full overflow-hidden">
-                      <LineChart
-                        series={[
-                          {
-                            id: 'hr-series',
-                            data: currentChartData.map((d) => d.hr),
-                            label: 'Detak Jantung (BPM)',
-                            area: false,
-                            curve: 'natural',
-                            color: '#0E7490',
-                            showMark: true,
-                            valueFormatter: (value: number | null) => (value != null ? `${value} BPM` : ''),
-                          },
-                          ...(showHrvComparison
-                            ? [
-                                {
-                                  id: 'hrv-series',
-                                  data: currentChartData.map((d) => d.hrv),
-                                  label: 'HRV (ms)',
-                                  area: false,
-                                  curve: 'natural' as const,
-                                  color: '#D97706',
-                                  showMark: true,
-                                  valueFormatter: (value: number | null) => (value != null ? `${value} ms` : ''),
-                                },
-                              ]
-                            : []),
-                        ]}
-                        xAxis={[
-                          {
-                            scaleType: 'point',
-                            data: currentChartData.map((d) => d.label),
-                            tickLabelStyle: {
-                              fontSize: 11,
-                              fill: '#64748B',
-                              fontWeight: 500,
-                            },
-                          },
-                        ]}
-                        yAxis={[
-                          {
-                            min: 40,
-                            max: 95,
-                            tickLabelStyle: {
-                              fontSize: 11,
-                              fill: '#64748B',
-                              fontWeight: 500,
-                            },
-                            valueFormatter: (value: number | null) => (value != null ? `${value} BPM` : ''),
-                          },
-                        ]}
-                        grid={{ horizontal: true }}
-                        height={250}
-                        margin={{ left: 55, right: 25, top: 25, bottom: 25 }}
-                        sx={{
-                          width: '100%',
-                          '& .MuiChartsGrid-line': {
-                            stroke: '#F1F5F9',
-                            strokeWidth: 1,
-                          },
-                          '& .MuiLineElement-series-hr-series': {
-                            strokeWidth: 2.8,
-                          },
-                          '& .MuiLineElement-series-hrv-series': {
-                            strokeWidth: 2,
-                            strokeDasharray: '4 3',
-                          },
-                        }}
-                      >
-                        <ChartsReferenceLine
-                          y={69}
-                          label="Baseline: 69 BPM"
-                          labelAlign="end"
-                          lineStyle={{
-                            stroke: '#10B981',
-                            strokeDasharray: '4 4',
-                            strokeWidth: 1.5,
-                          }}
-                          labelStyle={{
-                            fill: '#065F46',
-                            fontSize: 11,
-                            fontWeight: 700,
-                          }}
-                        />
-                        {showActivityOverlay &&
-                          timeRange === 'harian' &&
-                          activities.map((act) => {
-                            const hour = Math.round(act.timestamp)
-                            const hourLabel = `${String(hour).padStart(2, '0')}:00`
-                            const exists = hourlyData.some((d) => d.label === hourLabel)
-                            if (!exists) return null
-                            const icon = act.category === 'kopi' ? '☕' : act.category === 'olahraga' ? '🏃' : '🍲'
-                            return (
-                              <ChartsReferenceLine
-                                key={act.id}
-                                x={hourLabel}
-                                label={`${icon} ${act.title}`}
-                                labelAlign="start"
-                                lineStyle={{
-                                  stroke: '#0E7490',
-                                  strokeDasharray: '3 3',
-                                  strokeWidth: 1.2,
-                                }}
-                                labelStyle={{
-                                  fill: '#0E7490',
+                    {/* 2-COLUMN SECTION: SEBELAH KIRI RANGE CALENDAR SHADCN, SEBELAH KANAN LINE CHART */}
+                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-stretch pt-1">
+                      {/* SEBELAH KIRI: RANGE CALENDAR SHADCN */}
+                      <div className="lg:col-span-5 xl:col-span-4 bg-slate-50/70 border border-slate-200/80 rounded-2xl p-4 flex flex-col justify-between space-y-3">
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs font-bold text-slate-800 tracking-tight">
+                            Pilih Rentang Tanggal
+                          </span>
+                          <span className="text-[10px] font-semibold text-indigo-700 bg-indigo-50 border border-indigo-200/80 px-2 py-0.5 rounded-full">
+                            {formattedRangeLabel}
+                          </span>
+                        </div>
+
+                        <div className="flex justify-center bg-white rounded-xl border border-slate-200/70 p-2 shadow-2xs">
+                          <Calendar
+                            mode="range"
+                            defaultMonth={new Date(2026, 8, 1)}
+                            selected={dateRange}
+                            onSelect={(range) => {
+                              setDateRange(range)
+                              if (range?.from && range?.to) {
+                                const diff = Math.ceil(Math.abs(range.to.getTime() - range.from.getTime()) / (1000 * 60 * 60 * 24))
+                                if (diff === 0) setTimeRange('harian')
+                                else if (diff <= 7) setTimeRange('mingguan')
+                                else setTimeRange('bulanan')
+                              } else if (range?.from && !range?.to) {
+                                setTimeRange('harian')
+                              }
+                            }}
+                            className="p-1"
+                          />
+                        </div>
+
+                        {/* Presets & Legend Indicator */}
+                        <div className="pt-2 border-t border-slate-200/60 flex items-center justify-between text-[11px] text-slate-500">
+                          <span className="font-medium">Rentang: {currentChartData.length} Poin Data</span>
+                          <div className="flex items-center gap-1.5">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setDateRange({ from: new Date(2026, 8, 5), to: new Date(2026, 8, 5) })
+                                setTimeRange('harian')
+                              }}
+                              className="px-2 py-0.5 rounded-md hover:bg-slate-200/70 text-slate-600 font-semibold cursor-pointer transition text-[11px]"
+                            >
+                              Hari Ini
+                            </button>
+                            <span>•</span>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setDateRange({ from: new Date(2026, 8, 1), to: new Date(2026, 8, 7) })
+                                setTimeRange('mingguan')
+                              }}
+                              className="px-2 py-0.5 rounded-md hover:bg-slate-200/70 text-slate-600 font-semibold cursor-pointer transition text-[11px]"
+                            >
+                              7 Hari
+                            </button>
+                            <span>•</span>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setDateRange({ from: new Date(2026, 8, 1), to: new Date(2026, 8, 30) })
+                                setTimeRange('bulanan')
+                              }}
+                              className="px-2 py-0.5 rounded-md hover:bg-slate-200/70 text-slate-600 font-semibold cursor-pointer transition text-[11px]"
+                            >
+                              Bulan Ini
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* SEBELAH KANAN: LINE CHART MENGIKUTI TANGGAL YANG DISELECT */}
+                      <div className="lg:col-span-7 xl:col-span-8 bg-white border border-slate-200/80 rounded-2xl p-4 flex flex-col justify-between space-y-2">
+                        {/* Interactive Legend (sesuai gambar) */}
+                        <div className="flex flex-wrap items-center justify-between gap-2 pb-2 border-b border-slate-100">
+                          <div className="flex items-center gap-4">
+                            <div className="flex items-center gap-1.5 text-xs font-bold text-teal-800">
+                              <span className="w-2.5 h-2.5 rounded-full bg-teal-600 inline-block" />
+                              Detak Jantung (BPM)
+                            </div>
+                            {showHrvComparison && (
+                              <div className="flex items-center gap-1.5 text-xs font-bold text-amber-700">
+                                <span className="w-2.5 h-2.5 rounded-full bg-amber-500 inline-block" />
+                                HRV (ms)
+                              </div>
+                            )}
+                          </div>
+                          <span className="text-xs font-bold text-emerald-700 bg-emerald-50 border border-emerald-200/80 px-2.5 py-0.5 rounded-full">
+                            Baseline: 69 BPM
+                          </span>
+                        </div>
+
+                        {/* MUI X Line Chart */}
+                        <div className="w-full h-[280px]">
+                          <LineChart
+                            series={[
+                              {
+                                id: 'hr-series',
+                                data: currentChartData.map((d) => d.hr),
+                                label: 'Detak Jantung (BPM)',
+                                area: false,
+                                curve: 'natural',
+                                color: '#0E7490',
+                                showMark: true,
+                                valueFormatter: (value: number | null) => (value != null ? `${value} BPM` : ''),
+                              },
+                              ...(showHrvComparison
+                                ? [
+                                    {
+                                      id: 'hrv-series',
+                                      data: currentChartData.map((d) => d.hrv),
+                                      label: 'HRV (ms)',
+                                      area: false,
+                                      curve: 'natural' as const,
+                                      color: '#D97706',
+                                      showMark: true,
+                                      valueFormatter: (value: number | null) => (value != null ? `${value} ms` : ''),
+                                    },
+                                  ]
+                                : []),
+                            ]}
+                            xAxis={[
+                              {
+                                scaleType: 'point',
+                                data: currentChartData.map((d) => d.label),
+                                tickLabelStyle: {
                                   fontSize: 10,
-                                  fontWeight: 600,
-                                }}
-                              />
-                            )
-                          })}
-                      </LineChart>
+                                  fill: '#64748B',
+                                  fontWeight: 500,
+                                },
+                              },
+                            ]}
+                            yAxis={[
+                              {
+                                min: 40,
+                                max: 95,
+                                tickLabelStyle: {
+                                  fontSize: 10,
+                                  fill: '#64748B',
+                                  fontWeight: 500,
+                                },
+                                valueFormatter: (value: number | null) => (value != null ? `${value} BPM` : ''),
+                              },
+                            ]}
+                            grid={{ horizontal: true }}
+                            height={270}
+                            margin={{ left: 45, right: 20, top: 20, bottom: 25 }}
+                            sx={{
+                              width: '100%',
+                              '& .MuiChartsGrid-line': {
+                                stroke: '#F1F5F9',
+                                strokeWidth: 1,
+                              },
+                              '& .MuiLineElement-series-hr-series': {
+                                strokeWidth: 2.8,
+                              },
+                              '& .MuiLineElement-series-hrv-series': {
+                                strokeWidth: 2,
+                                strokeDasharray: '4 3',
+                              },
+                            }}
+                          >
+                            <ChartsReferenceLine
+                              y={69}
+                              label="Baseline: 69 BPM"
+                              labelAlign="end"
+                              lineStyle={{
+                                stroke: '#10B981',
+                                strokeDasharray: '4 4',
+                                strokeWidth: 1.5,
+                              }}
+                              labelStyle={{
+                                fill: '#065F46',
+                                fontSize: 11,
+                                fontWeight: 700,
+                              }}
+                            />
+                            {showActivityOverlay &&
+                              timeRange === 'harian' &&
+                              activities.map((act) => {
+                                const hour = Math.round(act.timestamp)
+                                const hourLabel = `${String(hour).padStart(2, '0')}:00`
+                                const exists = hourlyData.some((d) => d.label === hourLabel)
+                                if (!exists) return null
+                                const icon = act.category === 'kopi' ? '☕' : act.category === 'olahraga' ? '🏃' : '🍲'
+                                return (
+                                  <ChartsReferenceLine
+                                    key={act.id}
+                                    x={hourLabel}
+                                    label={`${icon} ${act.title}`}
+                                    labelAlign="start"
+                                    lineStyle={{
+                                      stroke: '#0E7490',
+                                      strokeDasharray: '3 3',
+                                      strokeWidth: 1.2,
+                                    }}
+                                    labelStyle={{
+                                      fill: '#0E7490',
+                                      fontSize: 10,
+                                      fontWeight: 600,
+                                    }}
+                                  />
+                                )
+                              })}
+                          </LineChart>
+                        </div>
+                      </div>
                     </div>
 
                     {/* Activity Chips (when Penanda Aktivitas is active on Harian view) */}
@@ -796,6 +910,128 @@ export const Dashboard: React.FC = () => {
                           </Button>
                         ))}
                       </div>
+                    </div>
+                  </Card>
+
+                  {/* SHADCN TABLE: AKTIVITAS & LOG GAYA HIDUP TERBARU */}
+                  <Card className="p-5 sm:p-6 rounded-2xl sm:rounded-3xl bg-white border border-slate-200/80 shadow-xs hover:shadow-md transition-shadow space-y-4">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100">
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <h3 className="text-base font-bold text-slate-900 tracking-tight">
+                            Aktivitas & Log Gaya Hidup Terbaru
+                          </h3>
+                          <Chip size="sm" variant="soft" color="accent" className="font-bold text-[10px]">
+                            {activities.length} Aktivitas
+                          </Chip>
+                        </div>
+                        <p className="text-xs text-slate-500 mt-0.5">
+                          Korelasi kebiasaan harian terhadap respon denyut nadi dan ritme saraf otonom.
+                        </p>
+                      </div>
+
+                      <Button
+                        size="sm"
+                        onClick={() => {
+                          setSelectedLogCategory('olahraga')
+                          setIsLogModalOpen(true)
+                        }}
+                        className="bg-slate-900 hover:bg-slate-800 text-white rounded-full font-bold px-4 py-1.5 text-xs shadow-xs cursor-pointer flex items-center gap-1.5 self-start sm:self-auto"
+                      >
+                        <Plus className="w-3.5 h-3.5 text-teal-300" />
+                        Catat Aktivitas
+                      </Button>
+                    </div>
+
+                    <div className="overflow-x-auto -mx-2 sm:mx-0">
+                      <Table>
+                        <TableHeader>
+                          <TableRow className="border-slate-100 hover:bg-transparent">
+                            <TableHead className="text-slate-500 font-bold text-xs w-[110px]">Waktu</TableHead>
+                            <TableHead className="text-slate-500 font-bold text-xs min-w-[150px]">Aktivitas</TableHead>
+                            <TableHead className="text-slate-500 font-bold text-xs">Kategori</TableHead>
+                            <TableHead className="text-slate-500 font-bold text-xs min-w-[180px]">Keterangan / Detail</TableHead>
+                            <TableHead className="text-slate-500 font-bold text-xs min-w-[170px]">Respon Vital Sign</TableHead>
+                            <TableHead className="text-slate-500 font-bold text-xs text-right">Status</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {activities.length === 0 ? (
+                            <TableRow>
+                              <TableCell colSpan={6} className="text-center py-8 text-xs text-slate-400">
+                                Belum ada aktivitas yang dicatat hari ini. Klik "Catat Aktivitas" untuk mulai mencatat.
+                              </TableCell>
+                            </TableRow>
+                          ) : (
+                            activities.map((act) => {
+                              const catInfo = categories.find((c) => c.key === act.category)
+                              return (
+                                <TableRow key={act.id} className="border-slate-100 hover:bg-slate-50/60 transition-colors">
+                                  <TableCell className="font-mono text-xs font-semibold text-slate-700">
+                                    {act.time}
+                                  </TableCell>
+                                  <TableCell>
+                                    <div className="flex items-center gap-2.5">
+                                      <span className="w-7 h-7 rounded-lg bg-slate-100 flex items-center justify-center text-xs shrink-0 shadow-2xs">
+                                        {catInfo?.icon || '📌'}
+                                      </span>
+                                      <span className="font-bold text-xs text-slate-900">{act.title}</span>
+                                    </div>
+                                  </TableCell>
+                                  <TableCell>
+                                    <Chip
+                                      size="sm"
+                                      variant="soft"
+                                      color={
+                                        act.category === 'olahraga'
+                                          ? 'accent'
+                                          : act.category === 'kopi'
+                                          ? 'warning'
+                                          : act.category === 'makan'
+                                          ? 'success'
+                                          : 'neutral'
+                                      }
+                                      className="font-bold text-[10px] capitalize"
+                                    >
+                                      {catInfo?.label || act.category}
+                                    </Chip>
+                                  </TableCell>
+                                  <TableCell>
+                                    <span className="text-xs text-slate-600 max-w-[220px] truncate block">
+                                      {act.detail}
+                                    </span>
+                                  </TableCell>
+                                  <TableCell>
+                                    {act.category === 'olahraga' ? (
+                                      <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-rose-600 bg-rose-50 px-2 py-0.5 rounded-md border border-rose-100">
+                                        ↗ Denyut naik (+14 BPM)
+                                      </span>
+                                    ) : act.category === 'kopi' ? (
+                                      <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-amber-600 bg-amber-50 px-2 py-0.5 rounded-md border border-amber-100">
+                                        ↗ Stimulan (+6 BPM)
+                                      </span>
+                                    ) : act.category === 'tidur' ? (
+                                      <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-teal-600 bg-teal-50 px-2 py-0.5 rounded-md border border-teal-100">
+                                        ↘ Pemulihan (62 BPM)
+                                      </span>
+                                    ) : (
+                                      <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-100">
+                                        ✓ Denyut stabil (72 BPM)
+                                      </span>
+                                    )}
+                                  </TableCell>
+                                  <TableCell className="text-right">
+                                    <div className="inline-flex items-center gap-1.5 bg-emerald-50 border border-emerald-200/60 px-2 py-0.5 rounded-full text-[10px] font-bold text-emerald-700">
+                                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block" />
+                                      Tersinkron
+                                    </div>
+                                  </TableCell>
+                                </TableRow>
+                              )
+                            })
+                          )}
+                        </TableBody>
+                      </Table>
                     </div>
                   </Card>
                 </div>
