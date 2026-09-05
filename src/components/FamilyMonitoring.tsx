@@ -1,8 +1,10 @@
 import React, { useState } from 'react'
-import { Avatar } from '@/components/ui/avatar'
+import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
-import { Chip } from '@/components/ui/badge'
+import { Badge } from '@/components/ui/badge'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
 import {
   Dialog,
   DialogContent,
@@ -11,6 +13,20 @@ import {
   DialogDescription,
   DialogFooter,
 } from '@/components/ui/dialog'
+import { LineChart, ChartsReferenceLine } from '@mui/x-charts'
+import {
+  Heart,
+  Activity,
+  Wind,
+  Plus,
+  Search,
+  Bell,
+  Video,
+  Users,
+  AlertTriangle,
+  ArrowUpRight,
+  Sparkles,
+} from 'lucide-react'
 import { useChat } from '../context/ChatContext'
 
 export interface MonitoredFamilyMember {
@@ -152,10 +168,6 @@ export const FamilyMonitoring: React.FC<FamilyMonitoringProps> = ({
   const [filter, setFilter] = useState<'semua' | 'perlu-perhatian' | 'optimal'>('semua')
   const [searchQuery, setSearchQuery] = useState('')
   const [members, setMembers] = useState<MonitoredFamilyMember[]>(initialFamilyMembers)
-  const [hoveredChartPoint, setHoveredChartPoint] = useState<{
-    memberId: string
-    pointIndex: number
-  } | null>(null)
   const [activeAlertToast, setActiveAlertToast] = useState<string | null>(null)
   const [isAddModalOpen, setIsAddModalOpen] = useState(false)
   const [newMemberName, setNewMemberName] = useState('')
@@ -175,6 +187,9 @@ export const FamilyMonitoring: React.FC<FamilyMonitoringProps> = ({
       m.relation.toLowerCase().includes(searchQuery.toLowerCase())
     return matchesFilter && matchesSearch
   })
+
+  const attentionCount = members.filter((m) => m.status === 'Perlu Perhatian').length
+  const optimalCount = members.filter((m) => m.status !== 'Perlu Perhatian').length
 
   // Quick reminder action to Telegram
   const handleSendReminder = (member: MonitoredFamilyMember) => {
@@ -229,30 +244,9 @@ export const FamilyMonitoring: React.FC<FamilyMonitoringProps> = ({
     )
   }
 
-  // SVG Chart Geometry Constants
-  const chartWidth = 560
-  const chartHeight = 160
-  const padLeft = 32
-  const padRight = 20
-  const padTop = 18
-  const padBottom = 26
-  const plotW = chartWidth - padLeft - padRight
-  const plotH = chartHeight - padTop - padBottom
-  const minVal = 55
-  const maxVal = 95
-
-  const getYCoord = (val: number) => {
-    const clamped = Math.max(minVal, Math.min(maxVal, val))
-    return padTop + plotH - ((clamped - minVal) / (maxVal - minVal)) * plotH
-  }
-
-  const getXCoord = (idx: number, total: number) => {
-    return padLeft + (idx / (total - 1)) * plotW
-  }
-
   return (
     <div className="space-y-6 w-full animate-in fade-in duration-200">
-      {/* 1. TOP HEADER & SUMMARY CONTEXT (Open area in sketch) */}
+      {/* 1. TOP HEADER & SUMMARY CONTEXT */}
       <div className="bg-gradient-to-br from-stone-50/90 via-white to-teal-50/40 border border-stone-200/90 rounded-3xl p-6 sm:p-7 shadow-xs">
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
           <div className="space-y-2 max-w-2xl text-left">
@@ -272,34 +266,40 @@ export const FamilyMonitoring: React.FC<FamilyMonitoringProps> = ({
           {/* Quick Metrics & Actions */}
           <div className="flex flex-wrap items-center gap-3">
             <div className="flex items-center gap-2 bg-white px-4 py-2.5 rounded-2xl border border-stone-200/80 shadow-2xs">
+              <Users className="w-4 h-4 text-slate-400" />
               <span className="text-xs text-slate-500 font-medium">Terpantau:</span>
               <span className="text-sm font-bold text-slate-900">{members.length} Orang</span>
               <span className="text-xs text-stone-300">|</span>
-              <span className="inline-flex items-center gap-1 text-xs font-bold text-amber-700 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200/80">
-                1 Perlu Perhatian
-              </span>
+              {attentionCount > 0 ? (
+                <Badge variant="warning" className="text-xs font-bold px-2 py-0.5">
+                  <AlertTriangle className="w-3 h-3 mr-0.5" />
+                  {attentionCount} Perlu Perhatian
+                </Badge>
+              ) : (
+                <Badge variant="success" className="text-xs font-bold px-2 py-0.5">
+                  Semua Stabil
+                </Badge>
+              )}
             </div>
 
             <Button
               size="sm"
-              variant="primary"
-              onPress={() => setIsAddModalOpen(true)}
-              className="bg-slate-900 text-white rounded-full font-bold px-5 py-2.5 shadow-xs hover:bg-slate-800 transition text-xs cursor-pointer flex items-center gap-1.5"
+              onClick={() => setIsAddModalOpen(true)}
+              className="bg-slate-900 hover:bg-slate-800 text-white rounded-full font-bold px-4 py-2.5 shadow-xs cursor-pointer flex items-center gap-1.5"
             >
-              <svg className="w-4 h-4 text-teal-300" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
-              </svg>
+              <Plus className="w-4 h-4 text-teal-300" />
               Tambah Anggota
             </Button>
 
             {onBackToDashboard && (
               <Button
                 size="sm"
-                variant="ghost"
-                onPress={onBackToDashboard}
-                className="text-slate-600 hover:text-slate-900 rounded-full font-semibold text-xs px-4 cursor-pointer"
+                variant="outline"
+                onClick={onBackToDashboard}
+                className="text-slate-600 hover:text-slate-900 rounded-full font-semibold text-xs px-4 cursor-pointer flex items-center gap-1"
               >
-                Dashboard Pribadi ↗
+                Dashboard Pribadi
+                <ArrowUpRight className="w-3.5 h-3.5" />
               </Button>
             )}
           </div>
@@ -311,59 +311,51 @@ export const FamilyMonitoring: React.FC<FamilyMonitoringProps> = ({
             <span className="text-xs font-bold text-slate-500 mr-1">Filter:</span>
             <Button
               size="sm"
-              variant={filter === 'semua' ? 'primary' : 'ghost'}
-              onPress={() => setFilter('semua')}
+              variant={filter === 'semua' ? 'default' : 'outline'}
+              onClick={() => setFilter('semua')}
               className={`px-3.5 py-1.5 rounded-full text-xs font-semibold cursor-pointer transition ${
                 filter === 'semua'
-                  ? 'bg-slate-900 text-white font-bold shadow-xs'
-                  : 'text-slate-600 hover:bg-stone-100'
+                  ? 'bg-slate-900 text-white font-bold shadow-xs hover:bg-slate-800'
+                  : 'text-slate-600 hover:bg-stone-100 border-stone-200'
               }`}
             >
               Semua ({members.length})
             </Button>
             <Button
               size="sm"
-              variant={filter === 'perlu-perhatian' ? 'primary' : 'ghost'}
-              onPress={() => setFilter('perlu-perhatian')}
+              variant={filter === 'perlu-perhatian' ? 'default' : 'outline'}
+              onClick={() => setFilter('perlu-perhatian')}
               className={`px-3.5 py-1.5 rounded-full text-xs font-semibold cursor-pointer transition ${
                 filter === 'perlu-perhatian'
-                  ? 'bg-amber-700 text-white font-bold shadow-xs'
-                  : 'text-amber-700 hover:bg-amber-50'
+                  ? 'bg-amber-700 text-white font-bold shadow-xs hover:bg-amber-800 border-transparent'
+                  : 'text-amber-700 hover:bg-amber-50 border-amber-200'
               }`}
             >
-              Perlu Perhatian (1)
+              Perlu Perhatian ({attentionCount})
             </Button>
             <Button
               size="sm"
-              variant={filter === 'optimal' ? 'primary' : 'ghost'}
-              onPress={() => setFilter('optimal')}
+              variant={filter === 'optimal' ? 'default' : 'outline'}
+              onClick={() => setFilter('optimal')}
               className={`px-3.5 py-1.5 rounded-full text-xs font-semibold cursor-pointer transition ${
                 filter === 'optimal'
-                  ? 'bg-teal-700 text-white font-bold shadow-xs'
-                  : 'text-slate-600 hover:bg-stone-100'
+                  ? 'bg-teal-700 text-white font-bold shadow-xs hover:bg-teal-800 border-transparent'
+                  : 'text-slate-600 hover:bg-stone-100 border-stone-200'
               }`}
             >
-              Optimal & Aktif ({members.filter((m) => m.status !== 'Perlu Perhatian').length})
+              Optimal & Aktif ({optimalCount})
             </Button>
           </div>
 
           <div className="relative w-full sm:w-64">
-            <input
+            <Search className="w-4 h-4 text-stone-400 absolute left-3 top-2.5 pointer-events-none" />
+            <Input
               type="text"
               placeholder="Cari nama atau relasi..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full text-xs bg-white border border-stone-200 rounded-full px-4 py-2 pl-9 text-slate-800 placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-teal-700/20 focus:border-teal-700 shadow-2xs"
+              className="pl-9 rounded-full bg-white text-xs border-stone-200 shadow-2xs h-9"
             />
-            <svg
-              className="w-4 h-4 text-stone-400 absolute left-3 top-2.5"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-              strokeWidth="2"
-            >
-              <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-            </svg>
           </div>
         </div>
       </div>
@@ -376,59 +368,50 @@ export const FamilyMonitoring: React.FC<FamilyMonitoringProps> = ({
         </div>
       )}
 
-      {/* 2. FAMILY CARDS LIST (ACCORDING TO USER'S SKETCH) */}
+      {/* 2. FAMILY CARDS LIST (3-ZONE CLINICAL MONITORING CARDS) */}
       <div className="space-y-6">
         {filteredMembers.map((member) => {
           const isWarning = member.status === 'Perlu Perhatian'
-          const statusBadgeColor: 'warning' | 'accent' | 'success' = isWarning
+          const statusBadgeVariant = isWarning
             ? 'warning'
             : member.status === 'Aktif & Prima'
-            ? 'accent'
+            ? 'soft'
             : 'success'
-
-          const points = member.hourlyTrend
-            .map((pt, idx) => `${getXCoord(idx, member.hourlyTrend.length)},${getYCoord(pt.hr)}`)
-            .join(' ')
-
-          const areaPoints = `${getXCoord(0, member.hourlyTrend.length)},${padTop + plotH} ${points} ${getXCoord(
-            member.hourlyTrend.length - 1,
-            member.hourlyTrend.length
-          )},${padTop + plotH}`
 
           return (
             <Card
               key={member.id}
               className={`p-5 sm:p-6 rounded-3xl bg-white border transition-all duration-200 shadow-xs space-y-4 hover:shadow-md ${
                 isWarning
-                  ? 'border-amber-200/90 ring-1 ring-amber-200/50'
+                  ? 'border-amber-300/90 ring-1 ring-amber-200/60 bg-amber-50/10'
                   : 'border-stone-200/90'
               }`}
             >
-              {/* MEMBER HEADER BAR (The "NENEK" label area from the sketch) */}
+              {/* MEMBER HEADER BAR */}
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-stone-100">
                 <div className="flex items-center gap-3">
                   <Avatar size="md" className={`${member.avatarBg} text-white font-bold text-sm shadow-xs`}>
-                    <Avatar.Fallback>{member.initials}</Avatar.Fallback>
+                    <AvatarFallback className={`${member.avatarBg} text-white font-bold`}>
+                      {member.initials}
+                    </AvatarFallback>
                   </Avatar>
                   <div className="text-left">
-                    <div className="flex items-center gap-2">
+                    <div className="flex flex-wrap items-center gap-2">
                       <h3 className="text-base sm:text-lg font-extrabold text-slate-900 tracking-tight">
                         {member.name}
                       </h3>
                       <span className="text-xs px-2.5 py-0.5 rounded-full bg-stone-100 text-slate-700 font-bold">
                         {member.relation} · {member.age} thn
                       </span>
-                      <Chip
-                        size="sm"
-                        color={statusBadgeColor}
-                        variant="soft"
+                      <Badge
+                        variant={statusBadgeVariant}
                         className="font-bold text-xs"
                       >
                         {member.status}
-                      </Chip>
+                      </Badge>
                     </div>
                     <p className="text-xs text-slate-500 mt-0.5">
-                      {member.lastMeasured} · Sinyal Optik {member.signalQuality}%
+                      {member.lastMeasured} · Kualitas Sinyal Optik {member.signalQuality}%
                     </p>
                   </div>
                 </div>
@@ -438,224 +421,149 @@ export const FamilyMonitoring: React.FC<FamilyMonitoringProps> = ({
                   <Button
                     size="sm"
                     variant="outline"
-                    onPress={() => handleSendReminder(member)}
+                    onClick={() => handleSendReminder(member)}
                     className="text-xs font-semibold px-3 py-1.5 rounded-full border-stone-200 hover:border-teal-700 hover:bg-teal-50/50 text-slate-700 cursor-pointer flex items-center gap-1.5"
                   >
-                    <svg className="w-3.5 h-3.5 text-teal-700" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
-                    </svg>
+                    <Bell className="w-3.5 h-3.5 text-teal-700" />
                     Kirim Pengingat
                   </Button>
 
                   {onMeasureMember && (
                     <Button
                       size="sm"
-                      variant="primary"
-                      onPress={() => onMeasureMember(member)}
+                      onClick={() => onMeasureMember(member)}
                       className="text-xs font-bold px-4 py-1.5 rounded-full bg-slate-900 text-white hover:bg-slate-800 shadow-2xs cursor-pointer flex items-center gap-1.5"
                     >
-                      <svg className="w-3.5 h-3.5 text-teal-300" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                      </svg>
+                      <Video className="w-3.5 h-3.5 text-teal-300" />
                       Ukur rPPG
                     </Button>
                   )}
                 </div>
               </div>
 
-              {/* CARD BODY: 3-ZONE LAYOUT MATCHING USER'S SKETCH
-                  Zone 1: Wide Box (Left ~58%) -> Vital Dynamic Wave Chart
+              {/* CARD BODY: 3-ZONE LAYOUT
+                  Zone 1: Wide Box (Left ~58%) -> MUI LineChart for Vital Trends & Activity Markers
                   Zone 2: Tall Box (Middle ~22%) -> Primary Heart Rate BPM
-                  Zone 3: 2 Stacked Boxes (Right ~20%) -> Top: HRV RMSSD, Bottom: Respiration Rate
+                  Zone 3: 2 Stacked Boxes (Right ~20%) -> HRV RMSSD & Respiration Rate
               */}
               <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-stretch">
-                {/* ZONE 1: WIDE HORIZONTAL BOX (TREND CHART & DYNAMICS) */}
-                <div className="lg:col-span-7 bg-stone-50/60 border border-stone-200/80 rounded-2xl p-4 flex flex-col justify-between space-y-2">
-                  <div className="flex items-center justify-between">
+                {/* ZONE 1: WIDE HORIZONTAL BOX (MUI LINECHART TREND) */}
+                <div className="lg:col-span-7 bg-stone-50/60 border border-stone-200/80 rounded-2xl p-4 flex flex-col justify-between space-y-3">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                     <div>
-                      <span className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
-                        <svg className="w-3.5 h-3.5 text-teal-700" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.2">
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
-                        </svg>
-                        Dinamika Vital Sign Hari Ini
+                      <span className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+                        <Activity className="w-3.5 h-3.5 text-teal-700" />
+                        Dinamika Vital Sign Hari Ini (MUI LineChart)
                       </span>
                       <p className="text-[11px] text-slate-500 mt-0.5">
-                        Garis tren fluktuasi denyut per jam & penanda aktivitas
+                        Tren fluktuasi denyut per jam & korelasi ritme otonom
                       </p>
                     </div>
 
-                    <div className="flex items-center gap-2">
-                      <span className="text-[11px] font-semibold text-slate-500 bg-white px-2.5 py-1 rounded-full border border-stone-200 shadow-2xs">
-                        Baseline: <strong className="text-slate-800 font-bold">70 BPM</strong>
+                    {/* Interactive Legend & Baseline Indicator */}
+                    <div className="flex flex-wrap items-center gap-2.5">
+                      <div className="flex items-center gap-1.5 bg-white px-2 py-0.5 rounded-full border border-stone-200 shadow-2xs">
+                        <span className={`w-2 h-2 rounded-full ${isWarning ? 'bg-amber-500' : 'bg-teal-700'}`} />
+                        <span className="text-[10px] font-semibold text-slate-600">HR (BPM)</span>
+                      </div>
+                      <div className="flex items-center gap-1.5 bg-white px-2 py-0.5 rounded-full border border-stone-200 shadow-2xs">
+                        <span className="w-2 h-2 rounded-full bg-indigo-500" />
+                        <span className="text-[10px] font-semibold text-slate-600">HRV (ms)</span>
+                      </div>
+                      <span className="text-[10px] font-semibold text-teal-800 bg-teal-50 px-2 py-0.5 rounded-full border border-teal-200 shadow-2xs">
+                        Baseline: 70 BPM
                       </span>
                     </div>
                   </div>
 
-                  {/* SVG Chart Area */}
-                  <div className="w-full overflow-x-auto py-1">
-                    <svg
-                      viewBox={`0 0 ${chartWidth} ${chartHeight}`}
-                      className="w-full min-w-[380px] h-[120px] select-none overflow-visible"
+                  {/* MUI LINECHART CONTAINER */}
+                  <div className="w-full h-[180px] -mx-2">
+                    <LineChart
+                      xAxis={[
+                        {
+                          data: member.hourlyTrend.map((d) => d.time),
+                          scaleType: 'point',
+                          tickLabelStyle: {
+                            fontSize: 10,
+                            fill: '#64748B',
+                            fontWeight: 500,
+                          },
+                        },
+                      ]}
+                      yAxis={[
+                        {
+                          min: 50,
+                          max: 95,
+                          tickLabelStyle: {
+                            fontSize: 9,
+                            fill: '#94A3B8',
+                            fontWeight: 500,
+                          },
+                        },
+                      ]}
+                      series={[
+                        {
+                          id: `hr-${member.id}`,
+                          data: member.hourlyTrend.map((d) => d.hr),
+                          label: 'Detak Nadi (BPM)',
+                          color: isWarning ? '#D97706' : '#0E7490',
+                          curve: 'natural',
+                          showMark: true,
+                          area: false,
+                        },
+                        {
+                          id: `hrv-${member.id}`,
+                          data: member.hourlyTrend.map((d) => d.hrv),
+                          label: 'HRV RMSSD (ms)',
+                          color: '#6366F1',
+                          curve: 'natural',
+                          showMark: true,
+                        },
+                      ]}
+                      height={180}
+                      margin={{ top: 10, right: 16, bottom: 24, left: 32 }}
+                      grid={{ horizontal: true }}
+                      hideLegend
                     >
-                      <defs>
-                        <linearGradient id={`grad-${member.id}`} x1="0" y1="0" x2="0" y2="1">
-                          <stop
-                            offset="0%"
-                            stopColor={isWarning ? '#D97706' : '#0D9488'}
-                            stopOpacity="0.22"
-                          />
-                          <stop
-                            offset="100%"
-                            stopColor={isWarning ? '#D97706' : '#0D9488'}
-                            stopOpacity="0.0"
-                          />
-                        </linearGradient>
-                      </defs>
-
-                      {/* Horizontal Grid lines */}
-                      {[60, 70, 80, 90].map((val) => {
-                        const y = getYCoord(val)
-                        return (
-                          <g key={val}>
-                            <line
-                              x1={padLeft}
-                              y1={y}
-                              x2={padLeft + plotW}
-                              y2={y}
-                              stroke="#E7E5E4"
-                              strokeWidth="1"
-                              strokeDasharray="3 3"
-                            />
-                            <text
-                              x={padLeft - 6}
-                              y={y + 3}
-                              textAnchor="end"
-                              className="text-[9px] fill-slate-400 font-mono font-medium"
-                            >
-                              {val}
-                            </text>
-                          </g>
-                        )
-                      })}
-
-                      {/* Baseline Dashed Line (70 BPM) */}
-                      <line
-                        x1={padLeft}
-                        y1={getYCoord(70)}
-                        x2={padLeft + plotW}
-                        y2={getYCoord(70)}
-                        stroke="#0D9488"
-                        strokeWidth="1.2"
-                        strokeDasharray="4 4"
+                      <ChartsReferenceLine
+                        y={70}
+                        label="Baseline: 70 BPM"
+                        labelAlign="start"
+                        labelStyle={{ fontSize: 9, fill: '#0D9488', fontWeight: 600 }}
+                        lineStyle={{ stroke: '#0D9488', strokeDasharray: '4 4', strokeWidth: 1.5 }}
                       />
-
-                      {/* Area Under Curve */}
-                      <polygon points={areaPoints} fill={`url(#grad-${member.id})`} />
-
-                      {/* Line Chart */}
-                      <polyline
-                        fill="none"
-                        stroke={isWarning ? '#D97706' : '#0D9488'}
-                        strokeWidth="2.2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        points={points}
-                      />
-
-                      {/* Data Points and Interactivity */}
-                      {member.hourlyTrend.map((pt, idx) => {
-                        const cx = getXCoord(idx, member.hourlyTrend.length)
-                        const cy = getYCoord(pt.hr)
-                        const isHovered =
-                          hoveredChartPoint?.memberId === member.id &&
-                          hoveredChartPoint?.pointIndex === idx
-
-                        return (
-                          <g
-                            key={idx}
-                            className="cursor-pointer"
-                            onMouseEnter={() =>
-                              setHoveredChartPoint({ memberId: member.id, pointIndex: idx })
-                            }
-                            onMouseLeave={() => setHoveredChartPoint(null)}
-                          >
-                            <circle
-                              cx={cx}
-                              cy={cy}
-                              r={isHovered ? 5 : 3.5}
-                              className={`transition-all duration-150 ${
-                                isHovered
-                                  ? 'fill-slate-900 stroke-white stroke-2'
-                                  : isWarning
-                                  ? 'fill-white stroke-amber-600 stroke-2'
-                                  : 'fill-white stroke-teal-700 stroke-2'
-                              }`}
-                            />
-
-                            {/* X-axis time label */}
-                            <text
-                              x={cx}
-                              y={padTop + plotH + 16}
-                              textAnchor="middle"
-                              className="text-[9px] fill-slate-500 font-medium"
-                            >
-                              {pt.label}
-                            </text>
-
-                            {/* Activity Event Badge */}
-                            {pt.activity && (
-                              <g>
-                                <circle
-                                  cx={cx}
-                                  cy={cy - 16}
-                                  r="9"
-                                  className="fill-white stroke-amber-400 stroke-1.5 shadow-2xs"
-                                />
-                                <text
-                                  x={cx}
-                                  y={cy - 13}
-                                  textAnchor="middle"
-                                  className="text-[9px]"
-                                >
-                                  {pt.activity.type === 'obat' ? '💊' : '🏃'}
-                                </text>
-                              </g>
-                            )}
-
-                            {/* Hover Tooltip */}
-                            {isHovered && (
-                              <g>
-                                <rect
-                                  x={cx - 36}
-                                  y={cy - 36}
-                                  width="72"
-                                  height="24"
-                                  rx="6"
-                                  className="fill-slate-900 shadow-md"
-                                />
-                                <text
-                                  x={cx}
-                                  y={cy - 20}
-                                  textAnchor="middle"
-                                  className="text-[10px] fill-white font-bold"
-                                >
-                                  {pt.hr} BPM ({pt.time})
-                                </text>
-                              </g>
-                            )}
-                          </g>
-                        )
-                      })}
-                    </svg>
+                    </LineChart>
                   </div>
 
-                  {/* Context Note in Zone 1 */}
+                  {/* Activity Markers Pill Bar */}
+                  {member.hourlyTrend.some((t) => t.activity) && (
+                    <div className="flex flex-wrap items-center gap-1.5 pt-1 border-t border-stone-200/60">
+                      <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mr-1">
+                        Penanda Aktivitas:
+                      </span>
+                      {member.hourlyTrend
+                        .filter((t) => t.activity)
+                        .map((t, idx) => (
+                          <span
+                            key={idx}
+                            className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-amber-50 text-amber-900 border border-amber-200/80 shadow-2xs"
+                          >
+                            <span>{t.activity?.type === 'obat' ? '💊' : t.activity?.type === 'olahraga' ? '🏃' : '☕'}</span>
+                            <span className="font-bold">{t.time}</span>
+                            <span>·</span>
+                            <span>{t.activity?.title}</span>
+                          </span>
+                        ))}
+                    </div>
+                  )}
+
+                  {/* Context Health Note in Zone 1 */}
                   <div className="pt-2 border-t border-stone-200/60 flex items-center justify-between text-[11px] text-slate-500">
-                    <span className="flex items-center gap-1">
-                      <span className="w-1.5 h-1.5 rounded-full bg-teal-600 inline-block" />
+                    <span className="flex items-center gap-1.5 text-left">
+                      <Sparkles className="w-3.5 h-3.5 text-teal-600 shrink-0" />
                       {member.healthNote}
                     </span>
-                    <span className="font-mono text-slate-400 shrink-0 ml-2">
+                    <span className="font-mono text-slate-400 shrink-0 ml-2 hidden sm:inline">
                       Rentang: {Math.min(...member.hourlyTrend.map((t) => t.hr))} -{' '}
                       {Math.max(...member.hourlyTrend.map((t) => t.hr))} BPM
                     </span>
@@ -663,17 +571,11 @@ export const FamilyMonitoring: React.FC<FamilyMonitoringProps> = ({
                 </div>
 
                 {/* ZONE 2: TALL VERTICAL BOX (PRIMARY METRIC: HEART RATE BPM) */}
-                <div className="lg:col-span-2 bg-gradient-to-b from-white via-white to-stone-50 border border-stone-200/80 rounded-2xl p-4 flex flex-col items-center justify-between text-center space-y-2">
+                <div className="lg:col-span-2 bg-gradient-to-b from-white via-white to-stone-50 border border-stone-200/80 rounded-2xl p-4 flex flex-col items-center justify-between text-center space-y-2 shadow-2xs">
                   <div className="w-full flex items-center justify-between">
                     <span className="text-xs font-bold text-slate-700">Detak Jantung</span>
                     <div className="w-7 h-7 rounded-full bg-rose-50 border border-rose-100 flex items-center justify-center">
-                      <svg
-                        className="w-4 h-4 text-rose-600 animate-pulse"
-                        fill="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
-                      </svg>
+                      <Heart className="w-4 h-4 text-rose-600 fill-rose-500 animate-pulse" />
                     </div>
                   </div>
 
@@ -682,21 +584,19 @@ export const FamilyMonitoring: React.FC<FamilyMonitoringProps> = ({
                     <div className="text-4xl sm:text-5xl font-extrabold text-slate-900 tracking-tight leading-none">
                       {member.hr}
                     </div>
-                    <span className="text-[11px] font-bold text-slate-400 tracking-wider uppercase mt-1 block">
+                    <span className="text-[11px] font-bold text-slate-400 tracking-wider uppercase mt-1.5 block">
                       Denyut / Menit
                     </span>
                   </div>
 
                   {/* Status Indicator */}
                   <div className="w-full pt-2 border-t border-stone-100 flex flex-col items-center gap-1">
-                    <Chip
-                      size="sm"
-                      color={statusBadgeColor}
-                      variant="soft"
-                      className="font-bold text-xs w-full text-center"
+                    <Badge
+                      variant={statusBadgeVariant}
+                      className="font-bold text-xs w-full justify-center text-center py-0.5"
                     >
                       {member.status}
-                    </Chip>
+                    </Badge>
                     <span className="text-[10px] text-slate-400 font-medium">
                       Sensor Optik rPPG
                     </span>
@@ -709,9 +609,7 @@ export const FamilyMonitoring: React.FC<FamilyMonitoringProps> = ({
                   <div className="flex-1 bg-white border border-stone-200/80 rounded-2xl p-3.5 flex flex-col justify-between shadow-2xs">
                     <div className="flex items-center justify-between">
                       <span className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
-                        <svg className="w-3.5 h-3.5 text-sky-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                        </svg>
+                        <Activity className="w-3.5 h-3.5 text-sky-600" />
                         Variabilitas (HRV)
                       </span>
                       <span className="text-[10px] text-slate-400 font-mono">RMSSD</span>
@@ -724,14 +622,12 @@ export const FamilyMonitoring: React.FC<FamilyMonitoringProps> = ({
                         </span>
                         <span className="text-xs font-semibold text-slate-400">ms</span>
                       </div>
-                      <Chip
-                        size="sm"
-                        color={member.hrv < 40 ? 'warning' : 'success'}
-                        variant="soft"
+                      <Badge
+                        variant={member.hrv < 40 ? 'warning' : 'success'}
                         className="font-bold text-[11px]"
                       >
                         {member.hrv >= 50 ? 'Optimal' : member.hrv >= 40 ? 'Sedang' : 'Waspada'}
-                      </Chip>
+                      </Badge>
                     </div>
 
                     <p className="text-[10px] text-slate-500 pt-1 border-t border-stone-100">
@@ -743,12 +639,10 @@ export const FamilyMonitoring: React.FC<FamilyMonitoringProps> = ({
                   <div className="flex-1 bg-white border border-stone-200/80 rounded-2xl p-3.5 flex flex-col justify-between shadow-2xs">
                     <div className="flex items-center justify-between">
                       <span className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
-                        <svg className="w-3.5 h-3.5 text-teal-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3" />
-                        </svg>
+                        <Wind className="w-3.5 h-3.5 text-teal-600" />
                         Laju Pernapasan
                       </span>
-                      <span className="text-[10px] text-slate-400 font-mono">12-20</span>
+                      <span className="text-[10px] text-slate-400 font-mono">12-20 bpm</span>
                     </div>
 
                     <div className="flex items-baseline justify-between pt-1">
@@ -758,9 +652,9 @@ export const FamilyMonitoring: React.FC<FamilyMonitoringProps> = ({
                         </span>
                         <span className="text-xs font-semibold text-slate-400">bpm</span>
                       </div>
-                      <Chip size="sm" color="success" variant="soft" className="font-bold text-[11px]">
+                      <Badge variant="success" className="font-bold text-[11px]">
                         Rileks
-                      </Chip>
+                      </Badge>
                     </div>
 
                     <p className="text-[10px] text-slate-500 pt-1 border-t border-stone-100">
@@ -780,11 +674,11 @@ export const FamilyMonitoring: React.FC<FamilyMonitoringProps> = ({
             <Button
               size="sm"
               variant="outline"
-              onPress={() => {
+              onClick={() => {
                 setFilter('semua')
                 setSearchQuery('')
               }}
-              className="mt-2 text-xs rounded-full"
+              className="mt-2 text-xs rounded-full cursor-pointer"
             >
               Reset Filter
             </Button>
@@ -792,15 +686,13 @@ export const FamilyMonitoring: React.FC<FamilyMonitoringProps> = ({
         )}
       </div>
 
-      {/* 3. MODAL: TAMBAH ANGGOTA KELUARGA BARU */}
+      {/* 3. SHADCN DIALOG: TAMBAH ANGGOTA KELUARGA BARU */}
       <Dialog open={isAddModalOpen} onOpenChange={setIsAddModalOpen}>
-        <DialogContent className="w-full max-w-md bg-white rounded-3xl p-6 shadow-2xl border border-stone-200">
+        <DialogContent className="w-full max-w-md bg-white rounded-3xl p-6 shadow-2xl border border-stone-200 sm:max-w-md">
           <DialogHeader>
             <div className="flex items-center gap-2 mb-1">
-              <span className="p-1.5 rounded-full bg-teal-100 text-teal-800">
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
-                </svg>
+              <span className="p-2 rounded-full bg-teal-100 text-teal-800">
+                <Plus className="w-4 h-4" />
               </span>
               <DialogTitle className="text-lg font-bold text-slate-900">Tambah Anggota Keluarga</DialogTitle>
             </div>
@@ -809,27 +701,33 @@ export const FamilyMonitoring: React.FC<FamilyMonitoringProps> = ({
             </DialogDescription>
           </DialogHeader>
 
-          <form onSubmit={handleAddMember} className="space-y-4">
+          <form onSubmit={handleAddMember} className="space-y-4 pt-1">
             <div className="space-y-3.5">
-              <div>
-                <label className="text-xs font-bold text-slate-700 block mb-1">Nama Lengkap</label>
-                <input
+              <div className="space-y-1.5">
+                <Label htmlFor="memberName" className="text-xs font-bold text-slate-700">
+                  Nama Lengkap
+                </Label>
+                <Input
+                  id="memberName"
                   type="text"
                   required
                   placeholder="Contoh: Farhan Pratama"
                   value={newMemberName}
                   onChange={(e) => setNewMemberName(e.target.value)}
-                  className="w-full text-xs bg-stone-50 border border-stone-200 rounded-xl px-3 py-2 text-slate-800 focus:outline-none focus:ring-2 focus:ring-teal-700/20 focus:border-teal-700"
+                  className="text-xs bg-stone-50/80 border-stone-200 rounded-xl px-3 py-2 text-slate-800 focus-visible:ring-teal-700/20"
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="text-xs font-bold text-slate-700 block mb-1">Hubungan</label>
+                <div className="space-y-1.5">
+                  <Label htmlFor="memberRole" className="text-xs font-bold text-slate-700">
+                    Hubungan
+                  </Label>
                   <select
+                    id="memberRole"
                     value={newMemberRole}
                     onChange={(e) => setNewMemberRole(e.target.value)}
-                    className="w-full text-xs bg-stone-50 border border-stone-200 rounded-xl px-3 py-2 text-slate-800 focus:outline-none focus:ring-2 focus:ring-teal-700/20 focus:border-teal-700"
+                    className="w-full h-8 text-xs bg-stone-50/80 border border-stone-200 rounded-xl px-3 py-1.5 text-slate-800 focus:outline-none focus:ring-2 focus:ring-teal-700/20 focus:border-teal-700 transition"
                   >
                     <option value="Kakek">Kakek</option>
                     <option value="Nenek">Nenek</option>
@@ -840,22 +738,28 @@ export const FamilyMonitoring: React.FC<FamilyMonitoringProps> = ({
                   </select>
                 </div>
 
-                <div>
-                  <label className="text-xs font-bold text-slate-700 block mb-1">Usia (Tahun)</label>
-                  <input
+                <div className="space-y-1.5">
+                  <Label htmlFor="memberAge" className="text-xs font-bold text-slate-700">
+                    Usia (Tahun)
+                  </Label>
+                  <Input
+                    id="memberAge"
                     type="number"
                     min="1"
                     max="120"
                     placeholder="Contoh: 16"
                     value={newMemberAge}
                     onChange={(e) => setNewMemberAge(e.target.value)}
-                    className="w-full text-xs bg-stone-50 border border-stone-200 rounded-xl px-3 py-2 text-slate-800 focus:outline-none focus:ring-2 focus:ring-teal-700/20 focus:border-teal-700"
+                    className="text-xs bg-stone-50/80 border-stone-200 rounded-xl px-3 py-2 text-slate-800 focus-visible:ring-teal-700/20"
                   />
                 </div>
               </div>
 
-              <div className="p-3 rounded-xl bg-teal-50/70 border border-teal-100 text-[11px] text-teal-900 leading-relaxed">
-                💡 Pengukuran rPPG keluarga dapat dilakukan kapan saja tanpa login akun terpisah. Cukup pilih profil anggota saat pengukuran.
+              <div className="p-3 rounded-xl bg-teal-50/80 border border-teal-100 text-[11px] text-teal-900 leading-relaxed flex items-start gap-2">
+                <Sparkles className="w-4 h-4 text-teal-600 shrink-0 mt-0.5" />
+                <span>
+                  Pengukuran rPPG keluarga dapat dilakukan kapan saja tanpa login akun terpisah. Cukup pilih profil anggota saat pengukuran.
+                </span>
               </div>
             </div>
 
@@ -865,15 +769,14 @@ export const FamilyMonitoring: React.FC<FamilyMonitoringProps> = ({
                 variant="ghost"
                 size="sm"
                 onClick={() => setIsAddModalOpen(false)}
-                className="text-xs font-semibold rounded-full px-4 cursor-pointer"
+                className="text-xs font-semibold rounded-full px-4 cursor-pointer text-slate-600 hover:text-slate-900"
               >
                 Batal
               </Button>
               <Button
                 type="submit"
-                variant="default"
                 size="sm"
-                className="bg-slate-900 text-white text-xs font-bold rounded-full px-5 shadow-xs cursor-pointer"
+                className="bg-slate-900 text-white text-xs font-bold rounded-full px-5 shadow-xs cursor-pointer hover:bg-slate-800"
               >
                 Simpan Profil
               </Button>
