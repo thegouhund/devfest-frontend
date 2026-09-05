@@ -17,7 +17,7 @@ Nadiku adalah platform pemantauan kesehatan keluarga berbasis rPPG (*remote phot
 Satu-satunya solusi pemantauan kesehatan keluarga non-invasif yang memadukan pengukuran vital sign kamera tanpa alat tambahan, korelasi aktivitas gaya hidup harian (kopi, rokok, olahraga, tidur, makan), peringatan dini via Telegram, dan asisten AI ber-memori kesehatan keluarga — dengan penegasan etis dan konsisten sebagai alat wellness informasional non-diagnostik.
 
 ## Operating Context
-Aplikasi web responsif (desktop, tablet, mobile) dibangun dengan React 19, Vite, TypeScript, Tailwind CSS v4, dan HeroUI. Pengukuran dilakukan langsung melalui kamera web (atau unggah video wajah 30–60 detik). Hasil ekstraksi sinyal diproses di backend server-side. Notifikasi peringatan anomali dikirimkan instan ke bot Telegram.
+Aplikasi web responsif (desktop, tablet, mobile) dibangun dengan React 19, Vite, TypeScript, Tailwind CSS v4, dan shadcn/ui. Pengukuran dilakukan langsung melalui kamera web (atau unggah video wajah 30–60 detik). Hasil ekstraksi sinyal diproses di backend server-side. Notifikasi peringatan anomali dikirimkan instan ke bot Telegram.
 
 ## Capabilities and Constraints
 - **Pengukuran Vital Sign (rPPG)**: Heart Rate (BPM), Heart Rate Variability (HRV / RMSSD), dan Respiration Rate melalui webcam live atau unggah video.

@@ -1,11 +1,16 @@
 import React, { useState } from 'react'
+import { Avatar } from '@/components/ui/avatar'
+import { Button } from '@/components/ui/button'
+import { Card } from '@/components/ui/card'
+import { Chip } from '@/components/ui/badge'
 import {
-  Avatar,
-  Button,
-  Card,
-  Chip,
-  Modal,
-} from '@heroui/react'
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from '@/components/ui/dialog'
 import { useChat } from '../context/ChatContext'
 
 export interface MonitoredFamilyMember {
@@ -788,98 +793,94 @@ export const FamilyMonitoring: React.FC<FamilyMonitoringProps> = ({
       </div>
 
       {/* 3. MODAL: TAMBAH ANGGOTA KELUARGA BARU */}
-      <Modal isOpen={isAddModalOpen} onOpenChange={setIsAddModalOpen}>
-        <Modal.Backdrop className="bg-slate-900/40 backdrop-blur-xs fixed inset-0 z-50 flex items-center justify-center p-4">
-          <Modal.Container className="w-full max-w-md bg-white rounded-3xl p-6 shadow-2xl border border-stone-200">
-            <Modal.Dialog className="space-y-5">
-              <Modal.Header>
-                <div className="flex items-center gap-2 mb-1">
-                  <span className="p-1.5 rounded-full bg-teal-100 text-teal-800">
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
-                    </svg>
-                  </span>
-                  <h3 className="text-lg font-bold text-slate-900">Tambah Anggota Keluarga</h3>
+      <Dialog open={isAddModalOpen} onOpenChange={setIsAddModalOpen}>
+        <DialogContent className="w-full max-w-md bg-white rounded-3xl p-6 shadow-2xl border border-stone-200">
+          <DialogHeader>
+            <div className="flex items-center gap-2 mb-1">
+              <span className="p-1.5 rounded-full bg-teal-100 text-teal-800">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
+                </svg>
+              </span>
+              <DialogTitle className="text-lg font-bold text-slate-900">Tambah Anggota Keluarga</DialogTitle>
+            </div>
+            <DialogDescription className="text-xs text-slate-500">
+              Daftarkan profil keluarga untuk memantau data vital harian melalui webcam optik rPPG.
+            </DialogDescription>
+          </DialogHeader>
+
+          <form onSubmit={handleAddMember} className="space-y-4">
+            <div className="space-y-3.5">
+              <div>
+                <label className="text-xs font-bold text-slate-700 block mb-1">Nama Lengkap</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="Contoh: Farhan Pratama"
+                  value={newMemberName}
+                  onChange={(e) => setNewMemberName(e.target.value)}
+                  className="w-full text-xs bg-stone-50 border border-stone-200 rounded-xl px-3 py-2 text-slate-800 focus:outline-none focus:ring-2 focus:ring-teal-700/20 focus:border-teal-700"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-xs font-bold text-slate-700 block mb-1">Hubungan</label>
+                  <select
+                    value={newMemberRole}
+                    onChange={(e) => setNewMemberRole(e.target.value)}
+                    className="w-full text-xs bg-stone-50 border border-stone-200 rounded-xl px-3 py-2 text-slate-800 focus:outline-none focus:ring-2 focus:ring-teal-700/20 focus:border-teal-700"
+                  >
+                    <option value="Kakek">Kakek</option>
+                    <option value="Nenek">Nenek</option>
+                    <option value="Ayah">Ayah</option>
+                    <option value="Ibu">Ibu</option>
+                    <option value="Anak">Anak</option>
+                    <option value="Saudara">Saudara</option>
+                  </select>
                 </div>
-                <p className="text-xs text-slate-500">
-                  Daftarkan profil keluarga untuk memantau data vital harian melalui webcam optik rPPG.
-                </p>
-              </Modal.Header>
 
-              <form onSubmit={handleAddMember} className="space-y-4">
-                <Modal.Body className="space-y-3.5">
-                  <div>
-                    <label className="text-xs font-bold text-slate-700 block mb-1">Nama Lengkap</label>
-                    <input
-                      type="text"
-                      required
-                      placeholder="Contoh: Farhan Pratama"
-                      value={newMemberName}
-                      onChange={(e) => setNewMemberName(e.target.value)}
-                      className="w-full text-xs bg-stone-50 border border-stone-200 rounded-xl px-3 py-2 text-slate-800 focus:outline-none focus:ring-2 focus:ring-teal-700/20 focus:border-teal-700"
-                    />
-                  </div>
+                <div>
+                  <label className="text-xs font-bold text-slate-700 block mb-1">Usia (Tahun)</label>
+                  <input
+                    type="number"
+                    min="1"
+                    max="120"
+                    placeholder="Contoh: 16"
+                    value={newMemberAge}
+                    onChange={(e) => setNewMemberAge(e.target.value)}
+                    className="w-full text-xs bg-stone-50 border border-stone-200 rounded-xl px-3 py-2 text-slate-800 focus:outline-none focus:ring-2 focus:ring-teal-700/20 focus:border-teal-700"
+                  />
+                </div>
+              </div>
 
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <label className="text-xs font-bold text-slate-700 block mb-1">Hubungan</label>
-                      <select
-                        value={newMemberRole}
-                        onChange={(e) => setNewMemberRole(e.target.value)}
-                        className="w-full text-xs bg-stone-50 border border-stone-200 rounded-xl px-3 py-2 text-slate-800 focus:outline-none focus:ring-2 focus:ring-teal-700/20 focus:border-teal-700"
-                      >
-                        <option value="Kakek">Kakek</option>
-                        <option value="Nenek">Nenek</option>
-                        <option value="Ayah">Ayah</option>
-                        <option value="Ibu">Ibu</option>
-                        <option value="Anak">Anak</option>
-                        <option value="Saudara">Saudara</option>
-                      </select>
-                    </div>
+              <div className="p-3 rounded-xl bg-teal-50/70 border border-teal-100 text-[11px] text-teal-900 leading-relaxed">
+                💡 Pengukuran rPPG keluarga dapat dilakukan kapan saja tanpa login akun terpisah. Cukup pilih profil anggota saat pengukuran.
+              </div>
+            </div>
 
-                    <div>
-                      <label className="text-xs font-bold text-slate-700 block mb-1">Usia (Tahun)</label>
-                      <input
-                        type="number"
-                        min="1"
-                        max="120"
-                        placeholder="Contoh: 16"
-                        value={newMemberAge}
-                        onChange={(e) => setNewMemberAge(e.target.value)}
-                        className="w-full text-xs bg-stone-50 border border-stone-200 rounded-xl px-3 py-2 text-slate-800 focus:outline-none focus:ring-2 focus:ring-teal-700/20 focus:border-teal-700"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="p-3 rounded-xl bg-teal-50/70 border border-teal-100 text-[11px] text-teal-900 leading-relaxed">
-                    💡 Pengukuran rPPG keluarga dapat dilakukan kapan saja tanpa login akun terpisah. Cukup pilih profil anggota saat pengukuran.
-                  </div>
-                </Modal.Body>
-
-                <Modal.Footer className="flex items-center justify-end gap-2 pt-3 border-t border-stone-100">
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    onPress={() => setIsAddModalOpen(false)}
-                    className="text-xs font-semibold rounded-full px-4"
-                  >
-                    Batal
-                  </Button>
-                  <Button
-                    type="submit"
-                    variant="primary"
-                    size="sm"
-                    className="bg-slate-900 text-white text-xs font-bold rounded-full px-5 shadow-xs"
-                  >
-                    Simpan Profil
-                  </Button>
-                </Modal.Footer>
-              </form>
-            </Modal.Dialog>
-          </Modal.Container>
-        </Modal.Backdrop>
-      </Modal>
+            <DialogFooter className="flex items-center justify-end gap-2 pt-3 border-t border-stone-100">
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={() => setIsAddModalOpen(false)}
+                className="text-xs font-semibold rounded-full px-4 cursor-pointer"
+              >
+                Batal
+              </Button>
+              <Button
+                type="submit"
+                variant="default"
+                size="sm"
+                className="bg-slate-900 text-white text-xs font-bold rounded-full px-5 shadow-xs cursor-pointer"
+              >
+                Simpan Profil
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

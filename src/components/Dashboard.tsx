@@ -1,16 +1,20 @@
 import React, { useState } from 'react'
+import { Avatar } from '@/components/ui/avatar'
+import { Button, ButtonGroup } from '@/components/ui/button'
+import { Card } from '@/components/ui/card'
+import { Chip } from '@/components/ui/badge'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Switch } from '@/components/ui/switch'
+import { TextField } from '@/components/ui/field'
 import {
-  Avatar,
-  Button,
-  ButtonGroup,
-  Card,
-  Chip,
-  Input,
-  Label,
-  Modal,
-  Switch,
-  TextField,
-} from '@heroui/react'
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from '@/components/ui/dialog'
 import { LineChart, ChartsReferenceLine } from '@mui/x-charts'
 import vitalMonitoringIllustration from '../assets/illustrations/vital-monitoring.svg'
 import { useChat } from '../context/ChatContext'
@@ -432,24 +436,28 @@ export const Dashboard: React.FC = () => {
                   </p>
                 </div>
 
-                <div className="flex flex-wrap items-center gap-3">
-                  <Switch isSelected={showActivityOverlay} onChange={setShowActivityOverlay}>
-                    <Switch.Control>
-                      <Switch.Thumb />
-                    </Switch.Control>
-                    <Switch.Content className="text-xs font-semibold text-slate-700">
+                <div className="flex flex-wrap items-center gap-4">
+                  <div className="flex items-center gap-2">
+                    <Switch
+                      id="activity-overlay"
+                      checked={showActivityOverlay}
+                      onCheckedChange={setShowActivityOverlay}
+                    />
+                    <Label htmlFor="activity-overlay" className="text-xs font-semibold text-slate-700 cursor-pointer">
                       Penanda Aktivitas
-                    </Switch.Content>
-                  </Switch>
+                    </Label>
+                  </div>
 
-                  <Switch isSelected={showHrvComparison} onChange={setShowHrvComparison}>
-                    <Switch.Control>
-                      <Switch.Thumb />
-                    </Switch.Control>
-                    <Switch.Content className="text-xs font-semibold text-slate-700">
+                  <div className="flex items-center gap-2">
+                    <Switch
+                      id="hrv-comparison"
+                      checked={showHrvComparison}
+                      onCheckedChange={setShowHrvComparison}
+                    />
+                    <Label htmlFor="hrv-comparison" className="text-xs font-semibold text-slate-700 cursor-pointer">
                       Bandingkan HRV
-                    </Switch.Content>
-                  </Switch>
+                    </Label>
+                  </div>
 
                   <ButtonGroup variant="secondary" className="bg-stone-100 p-1 rounded-full text-xs">
                     <Button
@@ -812,147 +820,137 @@ export const Dashboard: React.FC = () => {
       </div>
 
       {/* QUICK LOG MODAL */}
-      <Modal isOpen={isLogModalOpen} onOpenChange={setIsLogModalOpen}>
-        <Modal.Backdrop className="bg-slate-900/50 backdrop-blur-xs fixed inset-0 z-50 flex items-center justify-center p-4">
-          <Modal.Container className="w-full max-w-md">
-            <Modal.Dialog className="bg-white rounded-3xl p-6 sm:p-8 w-full border border-stone-200 shadow-xl space-y-5">
-              <Modal.CloseTrigger />
-              <Modal.Header className="flex items-center gap-2 pb-3 border-b border-stone-100">
-                <span className="text-2xl">
-                  {categories.find((c) => c.key === selectedLogCategory)?.icon}
-                </span>
-                <div>
-                  <Modal.Heading className="text-base font-bold text-slate-900 tracking-tight">
-                    Catat {categories.find((c) => c.key === selectedLogCategory)?.label}
-                  </Modal.Heading>
-                  <p className="text-xs text-slate-500">Tambahkan detail catatan waktu & aktivitas</p>
-                </div>
-              </Modal.Header>
+      <Dialog open={isLogModalOpen} onOpenChange={setIsLogModalOpen}>
+        <DialogContent className="w-full max-w-md bg-white rounded-3xl p-6 sm:p-8 border border-stone-200 shadow-xl space-y-5">
+          <DialogHeader className="flex flex-row items-center gap-2 pb-3 border-b border-stone-100">
+            <span className="text-2xl">
+              {categories.find((c) => c.key === selectedLogCategory)?.icon}
+            </span>
+            <div>
+              <DialogTitle className="text-base font-bold text-slate-900 tracking-tight">
+                Catat {categories.find((c) => c.key === selectedLogCategory)?.label}
+              </DialogTitle>
+              <DialogDescription className="text-xs text-slate-500">Tambahkan detail catatan waktu & aktivitas</DialogDescription>
+            </div>
+          </DialogHeader>
 
-              <Modal.Body className="space-y-4">
-                <TextField className="w-full">
-                  <Label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-                    Catatan / Keterangan
-                  </Label>
-                  <Input
-                    placeholder="misal: 1 cangkir espresso / jalan pagi 30 menit"
-                    value={logDetail}
-                    onChange={(e) => setLogDetail(e.target.value)}
-                    className="w-full"
-                  />
-                </TextField>
+          <div className="space-y-4">
+            <TextField className="w-full">
+              <Label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                Catatan / Keterangan
+              </Label>
+              <Input
+                placeholder="misal: 1 cangkir espresso / jalan pagi 30 menit"
+                value={logDetail}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setLogDetail(e.target.value)}
+                className="w-full"
+              />
+            </TextField>
 
-                <div className="flex items-center justify-between text-xs text-slate-500 pt-1">
-                  <span>
-                    Waktu Catat: Sekarang ({new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })} WIB)
-                  </span>
-                </div>
-              </Modal.Body>
+            <div className="flex items-center justify-between text-xs text-slate-500 pt-1">
+              <span>
+                Waktu Catat: Sekarang ({new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })} WIB)
+              </span>
+            </div>
+          </div>
 
-              <Modal.Footer className="flex items-center justify-end gap-3 pt-3 border-t border-stone-100">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onPress={() => setIsLogModalOpen(false)}
-                  className="px-5 py-2 rounded-full text-xs font-semibold text-slate-600 hover:bg-stone-100"
-                >
-                  Batal
-                </Button>
-                <Button
-                  variant="primary"
-                  size="sm"
-                  onPress={handleAddActivity}
-                  className="px-6 py-2 rounded-full text-xs font-bold bg-slate-900 hover:bg-slate-800 text-white shadow-xs"
-                >
-                  Simpan Aktivitas
-                </Button>
-              </Modal.Footer>
-            </Modal.Dialog>
-          </Modal.Container>
-        </Modal.Backdrop>
-      </Modal>
+          <DialogFooter className="flex items-center justify-end gap-3 pt-3 border-t border-stone-100">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setIsLogModalOpen(false)}
+              className="px-5 py-2 rounded-full text-xs font-semibold text-slate-600 hover:bg-stone-100 cursor-pointer"
+            >
+              Batal
+            </Button>
+            <Button
+              variant="default"
+              size="sm"
+              onClick={handleAddActivity}
+              className="px-6 py-2 rounded-full text-xs font-bold bg-slate-900 hover:bg-slate-800 text-white shadow-xs cursor-pointer"
+            >
+              Simpan Aktivitas
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* SIMULATED rPPG MEASUREMENT MODAL */}
-      <Modal isOpen={isMeasureModalOpen} onOpenChange={setIsMeasureModalOpen}>
-        <Modal.Backdrop className="bg-slate-900/60 backdrop-blur-xs fixed inset-0 z-50 flex items-center justify-center p-4">
-          <Modal.Container className="w-full max-w-lg">
-            <Modal.Dialog className="bg-white rounded-3xl p-6 sm:p-8 w-full border border-stone-200 shadow-2xl space-y-5">
-              <Modal.CloseTrigger />
-              <Modal.Header className="space-y-1 pb-3 border-b border-stone-100">
-                <div className="flex items-center gap-2">
-                  <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-ping inline-block" />
-                  <Modal.Heading className="text-base sm:text-lg font-bold text-slate-900 tracking-tight">
-                    Pengukuran Vital Sign Kamera (rPPG)
-                  </Modal.Heading>
-                </div>
-                <p className="text-xs text-slate-500">
-                  Pastikan wajah berada di dalam bingkai dan pencahayaan ruangan memadai.
-                </p>
-              </Modal.Header>
+      <Dialog open={isMeasureModalOpen} onOpenChange={setIsMeasureModalOpen}>
+        <DialogContent className="w-full max-w-lg bg-white rounded-3xl p-6 sm:p-8 border border-stone-200 shadow-2xl space-y-5">
+          <DialogHeader className="space-y-1 pb-3 border-b border-stone-100">
+            <div className="flex items-center gap-2">
+              <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-ping inline-block" />
+              <DialogTitle className="text-base sm:text-lg font-bold text-slate-900 tracking-tight">
+                Pengukuran Vital Sign Kamera (rPPG)
+              </DialogTitle>
+            </div>
+            <DialogDescription className="text-xs text-slate-500">
+              Pastikan wajah berada di dalam bingkai dan pencahayaan ruangan memadai.
+            </DialogDescription>
+          </DialogHeader>
 
-              <Modal.Body className="space-y-4">
-                {/* Simulated Webcam Viewfinder */}
-                <div className="relative w-full h-56 bg-slate-950 rounded-2xl overflow-hidden flex flex-col items-center justify-center border border-slate-800">
-                  {/* Facial Oval Frame */}
-                  <div className="w-32 h-44 border-2 border-dashed border-teal-400/70 rounded-[50%] flex items-center justify-center relative animate-pulse">
-                    <span className="text-[10px] font-mono text-teal-300 bg-slate-900/80 px-2 py-0.5 rounded-full">
-                      Posisikan Wajah
-                    </span>
-                  </div>
+          <div className="space-y-4">
+            {/* Simulated Webcam Viewfinder */}
+            <div className="relative w-full h-56 bg-slate-950 rounded-2xl overflow-hidden flex flex-col items-center justify-center border border-slate-800">
+              {/* Facial Oval Frame */}
+              <div className="w-32 h-44 border-2 border-dashed border-teal-400/70 rounded-[50%] flex items-center justify-center relative animate-pulse">
+                <span className="text-[10px] font-mono text-teal-300 bg-slate-900/80 px-2 py-0.5 rounded-full">
+                  Posisikan Wajah
+                </span>
+              </div>
 
-                  {/* Top-right Status Pill */}
-                  <div className="absolute top-3 right-3 flex items-center gap-1.5 bg-black/60 backdrop-blur-xs px-2.5 py-1 rounded-full text-[11px] text-emerald-400 font-mono">
-                    <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                    Kualitas: {measuredPerson.signalQuality}%
-                  </div>
+              {/* Top-right Status Pill */}
+              <div className="absolute top-3 right-3 flex items-center gap-1.5 bg-black/60 backdrop-blur-xs px-2.5 py-1 rounded-full text-[11px] text-emerald-400 font-mono">
+                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                Kualitas: {measuredPerson.signalQuality}%
+              </div>
 
-                  {/* Bottom live stats */}
-                  <div className="absolute bottom-3 left-3 right-3 flex items-center justify-between bg-black/60 backdrop-blur-xs px-3 py-1.5 rounded-xl text-xs text-white">
-                    <span className="text-slate-300">Detak Estimasi:</span>
-                    <span className="font-mono font-bold text-teal-300">{measuredPerson.hr} BPM</span>
-                  </div>
-                </div>
+              {/* Bottom live stats */}
+              <div className="absolute bottom-3 left-3 right-3 flex items-center justify-between bg-black/60 backdrop-blur-xs px-3 py-1.5 rounded-xl text-xs text-white">
+                <span className="text-slate-300">Detak Estimasi:</span>
+                <span className="font-mono font-bold text-teal-300">{measuredPerson.hr} BPM</span>
+              </div>
+            </div>
 
-                {/* Progress bar */}
-                <div className="space-y-1.5">
-                  <div className="flex justify-between text-xs font-semibold text-slate-600">
-                    <span>Memproses Sinyal Mikrovaskular Wajah...</span>
-                    <span className="text-teal-700 font-mono font-bold">100%</span>
-                  </div>
-                  <div className="w-full bg-stone-100 rounded-full h-2 overflow-hidden">
-                    <div className="bg-teal-700 h-2 rounded-full w-full transition-all duration-500" />
-                  </div>
-                </div>
-              </Modal.Body>
+            {/* Progress bar */}
+            <div className="space-y-1.5">
+              <div className="flex justify-between text-xs font-semibold text-slate-600">
+                <span>Memproses Sinyal Mikrovaskular Wajah...</span>
+                <span className="text-teal-700 font-mono font-bold">100%</span>
+              </div>
+              <div className="w-full bg-stone-100 rounded-full h-2 overflow-hidden">
+                <div className="bg-teal-700 h-2 rounded-full w-full transition-all duration-500" />
+              </div>
+            </div>
+          </div>
 
-              <Modal.Footer className="flex items-center justify-end gap-3 pt-3 border-t border-stone-100">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onPress={() => setIsMeasureModalOpen(false)}
-                  className="px-5 py-2 rounded-full text-xs font-semibold text-slate-600 hover:bg-stone-100 cursor-pointer"
-                >
-                  Tutup
-                </Button>
-                <Button
-                  variant="primary"
-                  size="sm"
-                  onPress={() => {
-                    setIsMeasureModalOpen(false)
-                    addAiMessage(
-                      `Pengukuran rPPG selesai untuk ${measuredPerson.name}. Hasil: ${measuredPerson.hr} BPM, HRV ${measuredPerson.hrv} ms (${measuredPerson.status}). Kondisi terpantau stabil! 👍`,
-                      true
-                    )
-                  }}
-                  className="px-6 py-2 rounded-full text-xs font-bold bg-teal-800 hover:bg-teal-900 text-white shadow-xs cursor-pointer"
-                >
-                  Simpan & Perbarui Data
-                </Button>
-              </Modal.Footer>
-            </Modal.Dialog>
-          </Modal.Container>
-        </Modal.Backdrop>
-      </Modal>
+          <DialogFooter className="flex items-center justify-end gap-3 pt-3 border-t border-stone-100">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setIsMeasureModalOpen(false)}
+              className="px-5 py-2 rounded-full text-xs font-semibold text-slate-600 hover:bg-stone-100 cursor-pointer"
+            >
+              Tutup
+            </Button>
+            <Button
+              variant="primary"
+              size="sm"
+              onClick={() => {
+                setIsMeasureModalOpen(false)
+                addAiMessage(
+                  `Pengukuran rPPG selesai untuk ${measuredPerson.name}. Hasil: ${measuredPerson.hr} BPM, HRV ${measuredPerson.hrv} ms (${measuredPerson.status}). Kondisi terpantau stabil! 👍`,
+                  true
+                )
+              }}
+              className="px-6 py-2 rounded-full text-xs font-bold bg-teal-800 hover:bg-teal-900 text-white shadow-xs cursor-pointer"
+            >
+              Simpan & Perbarui Data
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

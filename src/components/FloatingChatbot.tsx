@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react'
-import { Chip } from '@heroui/react'
+import { Badge } from '@/components/ui/badge'
 import { useChat } from '../context/ChatContext'
 
 export const FloatingChatbot: React.FC = () => {
@@ -98,15 +98,13 @@ export const FloatingChatbot: React.FC = () => {
               </div>
 
               <div className="flex items-center gap-2">
-                <Chip
-                  size="sm"
-                  color="success"
-                  variant="soft"
+                <Badge
+                  variant="outline"
                   className="text-xs font-bold bg-emerald-400/20 text-emerald-300 border-emerald-400/30"
                 >
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse inline-block mr-1" />
                   Online
-                </Chip>
+                </Badge>
 
                 <button
                   type="button"

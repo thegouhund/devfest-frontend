@@ -1,26 +1,26 @@
-# AI Assistant Documentation Guide: HeroUI v3
+# AI Assistant Documentation Guide: shadcn/ui
 
-This project uses **HeroUI v3** with **Tailwind CSS v4** and **React 19**.
+This project uses **shadcn/ui** with **Tailwind CSS v4** and **React 19**.
 
-When building UI components, modifying styles, or implementing design patterns, AI assistants should reference the official HeroUI LLMs documentation URLs:
+When building UI components, modifying styles, or implementing design patterns, AI assistants should reference the official shadcn/ui LLMs documentation URLs:
 
 ## Documentation Index URLs
 
-- **Core Documentation Index**: https://heroui.com/react/llms.txt
-- **Component-Specific Documentation**: https://heroui.com/react/llms-components.txt
-- **Patterns and Best Practices**: https://heroui.com/react/llms-patterns.txt
-- **Full React Documentation**: https://heroui.com/react/llms-full.txt
+- **Core Documentation Index**: https://ui.shadcn.com/llms.txt
+- **Component Documentation**: https://ui.shadcn.com/docs/components
+- **Tailwind CSS v4 Support**: https://ui.shadcn.com/docs/tailwind-v4
+- **React 19 Support**: https://ui.shadcn.com/docs/react-19
 
 ## Key Architectural Principles
 
 1. **Tailwind CSS v4**:
-   - Styles are loaded via `@import "tailwindcss";` followed by `@import "@heroui/styles";` in `src/index.css`.
+   - Styles are loaded via `@import "tailwindcss";`, `@import "tw-animate-css";`, and `@import "shadcn/tailwind.css";` in `src/index.css`.
    - The `@tailwindcss/vite` plugin is configured in `vite.config.ts`.
-2. **React Aria Foundation**:
-   - Components are built on React Aria Components for accessibility and keyboard interactions.
-   - Interactive components use `onPress` rather than `onClick` (e.g., `<Button onPress={handleAction}>`).
+2. **Component Primitives**:
+   - Components are built using Radix UI primitives and utility classes (`cn` with `clsx` and `tailwind-merge`).
+   - Located under `src/components/ui/` with path alias `@/components/ui/*`.
 3. **No Root Provider Required**:
-   - HeroUI v3 does not require a root `<HeroUIProvider>` wrapper. Components work out of the box once styles are imported.
+   - shadcn/ui components are modular and open-code.
 4. **Imports**:
-   - All components are exported from `@heroui/react`.
-   - Component styles and theme variables are provided by `@heroui/styles`.
+   - UI components are imported from `@/components/ui/<component-name>`.
+   - Utility functions are imported from `@/lib/utils`.

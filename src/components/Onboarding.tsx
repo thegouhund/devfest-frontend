@@ -1,14 +1,11 @@
 import React, { useState } from 'react'
-import {
-  Button,
-  Card,
-  Checkbox,
-  Chip,
-  FieldError,
-  Input,
-  Label,
-  TextField,
-} from '@heroui/react'
+import { Button } from '@/components/ui/button'
+import { Card } from '@/components/ui/card'
+import { Checkbox } from '@/components/ui/checkbox'
+import { Chip } from '@/components/ui/badge'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { TextField, FieldError } from '@/components/ui/field'
 
 export interface OnboardingData {
   // Step 1: Signup
@@ -304,7 +301,7 @@ export const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
                       <Input
                         placeholder="misal: Budi Pratama"
                         value={formData.fullName}
-                        onChange={(e) =>
+                        onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                           setFormData({ ...formData, fullName: e.target.value })
                         }
                         className="w-full"
@@ -324,7 +321,7 @@ export const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
                         type="email"
                         placeholder="nama@email.com"
                         value={formData.email}
-                        onChange={(e) =>
+                        onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                           setFormData({ ...formData, email: e.target.value })
                         }
                         className="w-full"
@@ -345,7 +342,7 @@ export const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
                           type="password"
                           placeholder="Minimal 6 karakter"
                           value={formData.password}
-                          onChange={(e) =>
+                          onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                             setFormData({
                               ...formData,
                               password: e.target.value,
@@ -368,7 +365,7 @@ export const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
                           type="password"
                           placeholder="Ulangi kata sandi"
                           value={formData.confirmPassword}
-                          onChange={(e) =>
+                          onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                             setFormData({
                               ...formData,
                               confirmPassword: e.target.value,
@@ -419,7 +416,7 @@ export const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
                       <Input
                         type="date"
                         value={formData.birthDate}
-                        onChange={(e) =>
+                        onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                           setFormData({
                             ...formData,
                             birthDate: e.target.value,
@@ -434,7 +431,7 @@ export const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
                       )}
                     </TextField>
 
-                    {/* Gender Pill Selection using HeroUI Buttons */}
+                    {/* Gender Pill Selection using shadcn Buttons */}
                     <div>
                       <Label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
                         Jenis Kelamin
@@ -442,9 +439,8 @@ export const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
                       <div className="flex gap-3">
                         <Button
                           variant={formData.gender === 'male' ? 'primary' : 'outline'}
-                          size="md"
-                          onPress={() => setFormData({ ...formData, gender: 'male' })}
-                          className={`rounded-xl text-sm font-semibold transition ${
+                          onClick={() => setFormData({ ...formData, gender: 'male' })}
+                          className={`rounded-xl text-sm font-semibold transition px-4 py-2 h-auto ${
                             formData.gender === 'male'
                               ? 'bg-teal-800 text-white'
                               : 'text-slate-700 border-stone-300'
@@ -454,9 +450,8 @@ export const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
                         </Button>
                         <Button
                           variant={formData.gender === 'female' ? 'primary' : 'outline'}
-                          size="md"
-                          onPress={() => setFormData({ ...formData, gender: 'female' })}
-                          className={`rounded-xl text-sm font-semibold transition ${
+                          onClick={() => setFormData({ ...formData, gender: 'female' })}
+                          className={`rounded-xl text-sm font-semibold transition px-4 py-2 h-auto ${
                             formData.gender === 'female'
                               ? 'bg-teal-800 text-white'
                               : 'text-slate-700 border-stone-300'
@@ -482,7 +477,7 @@ export const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
                           type="number"
                           placeholder="170"
                           value={formData.height}
-                          onChange={(e) =>
+                          onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                             setFormData({
                               ...formData,
                               height: e.target.value,
@@ -505,7 +500,7 @@ export const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
                           type="number"
                           placeholder="65"
                           value={formData.weight}
-                          onChange={(e) =>
+                          onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                             setFormData({
                               ...formData,
                               weight: e.target.value,
@@ -574,10 +569,10 @@ export const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
                                 <Label className="block text-xs font-bold text-slate-700 mb-1">
                                   Nama Keluarga
                                 </Label>
-                                <Input
+                                 <Input
                                   placeholder="misal: Keluarga Pratama"
                                   value={formData.familyName}
-                                  onChange={(e) =>
+                                  onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                                     setFormData({
                                       ...formData,
                                       familyName: e.target.value,
@@ -637,7 +632,7 @@ export const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
                                   placeholder="misal: FAM789"
                                   maxLength={8}
                                   value={formData.inviteCode}
-                                  onChange={(e) =>
+                                  onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                                     setFormData({
                                       ...formData,
                                       inviteCode: e.target.value.toUpperCase(),
@@ -764,48 +759,54 @@ export const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
                       </div>
                     </div>
 
-                    {/* Consent Checkboxes using HeroUI Checkbox */}
+                    {/* Consent Checkboxes using shadcn Checkbox */}
                     <div className="space-y-3 pt-2">
-                      <Checkbox
-                        isSelected={formData.consentTerms}
-                        onChange={(checked) =>
-                          setFormData({
-                            ...formData,
-                            consentTerms: checked,
-                          })
-                        }
-                      >
-                        <Checkbox.Control>
-                          <Checkbox.Indicator />
-                        </Checkbox.Control>
-                        <Checkbox.Content className="text-xs text-slate-800 font-medium leading-normal">
+                      <div className="flex items-start gap-2.5">
+                        <Checkbox
+                          id="consentTerms"
+                          checked={formData.consentTerms}
+                          onCheckedChange={(checked) =>
+                            setFormData({
+                              ...formData,
+                              consentTerms: Boolean(checked),
+                            })
+                          }
+                          className="mt-0.5 cursor-pointer"
+                        />
+                        <label
+                          htmlFor="consentTerms"
+                          className="text-xs text-slate-800 font-medium leading-normal cursor-pointer"
+                        >
                           Saya memahami bahwa platform ini bersifat informasional
                           dan bukan pengganti penanganan medis klinis.
-                        </Checkbox.Content>
-                      </Checkbox>
+                        </label>
+                      </div>
                       {errors.consentTerms && (
                         <p className="text-xs text-red-500 pl-7 font-medium">
                           {errors.consentTerms}
                         </p>
                       )}
 
-                      <Checkbox
-                        isSelected={formData.consentCamera}
-                        onChange={(checked) =>
-                          setFormData({
-                            ...formData,
-                            consentCamera: checked,
-                          })
-                        }
-                      >
-                        <Checkbox.Control>
-                          <Checkbox.Indicator />
-                        </Checkbox.Control>
-                        <Checkbox.Content className="text-xs text-slate-800 font-medium leading-normal">
+                      <div className="flex items-start gap-2.5">
+                        <Checkbox
+                          id="consentCamera"
+                          checked={formData.consentCamera}
+                          onCheckedChange={(checked) =>
+                            setFormData({
+                              ...formData,
+                              consentCamera: Boolean(checked),
+                            })
+                          }
+                          className="mt-0.5 cursor-pointer"
+                        />
+                        <label
+                          htmlFor="consentCamera"
+                          className="text-xs text-slate-800 font-medium leading-normal cursor-pointer"
+                        >
                           Saya mengizinkan akses kamera browser saat sesi
                           pengukuran vital sign rPPG berlangsung.
-                        </Checkbox.Content>
-                      </Checkbox>
+                        </label>
+                      </div>
                       {errors.consentCamera && (
                         <p className="text-xs text-red-500 pl-7 font-medium">
                           {errors.consentCamera}
@@ -816,7 +817,7 @@ export const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
                 </div>
               )}
 
-              {/* Bottom Action Buttons with HeroUI Button */}
+              {/* Bottom Action Buttons with shadcn Button */}
               <div className="mt-10 pt-6 border-t border-stone-100 flex items-center justify-between gap-4">
                 <Button
                   variant="outline"
