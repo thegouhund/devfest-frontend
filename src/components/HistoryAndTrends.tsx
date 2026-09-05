@@ -11,11 +11,11 @@ interface HistoryAndTrendsProps {
 
 // Mock historical data including video link and RR (respiration rate)
 const historyLogs = [
-  { id: 1, date: '5 Sep 2026', time: '08:30 WIB', hr: 72, hrv: 52, rr: 16, status: 'Normal', quality: 98, note: 'Pagi hari', videoUrl: 'https://www.w3schools.com/html/mov_bbb.mp4' },
-  { id: 2, date: '4 Sep 2026', time: '19:45 WIB', hr: 78, hrv: 46, rr: 18, status: 'Normal', quality: 95, note: 'Setelah makan malam', videoUrl: 'https://www.w3schools.com/html/mov_bbb.mp4' },
-  { id: 3, date: '4 Sep 2026', time: '07:15 WIB', hr: 69, hrv: 54, rr: 15, status: 'Normal', quality: 97, note: 'Bangun tidur', videoUrl: 'https://www.w3schools.com/html/mov_bbb.mp4' },
-  { id: 4, date: '3 Sep 2026', time: '14:20 WIB', hr: 85, hrv: 40, rr: 20, status: 'Waspada', quality: 92, note: 'Setelah kopi', videoUrl: 'https://www.w3schools.com/html/mov_bbb.mp4' },
-  { id: 5, date: '3 Sep 2026', time: '08:00 WIB', hr: 71, hrv: 53, rr: 15, status: 'Normal', quality: 99, note: 'Pagi hari', videoUrl: 'https://www.w3schools.com/html/mov_bbb.mp4' },
+  { id: 1, date: '5 Sep 2026', time: '08:30 WIB', hr: 72, hrv: 52, rr: 16, status: 'Normal', quality: 98, note: 'Pagi hari', videoUrl: 'https://www.w3schools.com/html/mov_bbb.mp4', isCalibrating: false, baselineHr: 70, baselineHrv: 50 },
+  { id: 2, date: '4 Sep 2026', time: '19:45 WIB', hr: 78, hrv: 46, rr: 18, status: 'Normal', quality: 95, note: 'Setelah makan malam', videoUrl: 'https://www.w3schools.com/html/mov_bbb.mp4', isCalibrating: false, baselineHr: 72, baselineHrv: 48 },
+  { id: 3, date: '4 Sep 2026', time: '07:15 WIB', hr: 69, hrv: 54, rr: 15, status: 'Normal', quality: 97, note: 'Bangun tidur', videoUrl: 'https://www.w3schools.com/html/mov_bbb.mp4', isCalibrating: false, baselineHr: 70, baselineHrv: 50 },
+  { id: 4, date: '3 Sep 2026', time: '14:20 WIB', hr: 88, hrv: 35, rr: 20, status: 'Perhatian', quality: 92, note: 'Setelah kopi', videoUrl: 'https://www.w3schools.com/html/mov_bbb.mp4', isCalibrating: false, baselineHr: 70, baselineHrv: 50, insight: 'Terdeteksi lonjakan detak jantung (+18 BPM) yang kurang biasa untuk aktivitas istirahat Anda.' },
+  { id: 5, date: '3 Sep 2026', time: '08:00 WIB', hr: 71, hrv: 53, rr: 15, status: 'Normal', quality: 99, note: 'Pagi hari', videoUrl: 'https://www.w3schools.com/html/mov_bbb.mp4', isCalibrating: true },
 ]
 
 export const HistoryAndTrends: React.FC<HistoryAndTrendsProps> = ({ member }) => {
@@ -43,14 +43,14 @@ export const HistoryAndTrends: React.FC<HistoryAndTrendsProps> = ({ member }) =>
             Log riwayat pengukuran vital sign untuk {member.name}
           </p>
         </div>
-        <div className="flex items-center gap-1 bg-stone-100 p-1 rounded-full text-xs">
+        <div className="flex w-full sm:w-auto items-center gap-1 bg-stone-100 p-1 rounded-full text-xs">
           {['7 Hari', '14 Hari', '30 Hari'].map((p) => (
             <Button
               key={p}
               size="sm"
               variant={period === p ? 'default' : 'ghost'}
               onClick={() => setPeriod(p as any)}
-              className={`px-4 py-1.5 rounded-full text-xs font-semibold h-auto ${
+              className={`flex-1 sm:flex-none px-4 py-1.5 rounded-full text-xs font-semibold h-auto ${
                 period === p ? 'bg-white text-slate-900 shadow-xs hover:bg-white/90' : 'text-slate-500 hover:text-slate-700'
               }`}
             >
@@ -111,10 +111,24 @@ export const HistoryAndTrends: React.FC<HistoryAndTrendsProps> = ({ member }) =>
                       <span className="text-sm text-slate-700">{log.note}</span>
                     </td>
                     <td className="px-5 py-4">
-                      <span className="text-sm font-extrabold text-slate-900">{log.hr}</span>
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-sm font-extrabold text-slate-900">{log.hr}</span>
+                        {!log.isCalibrating && log.baselineHr && (
+                          <span className={`text-[10px] font-bold ${log.hr > log.baselineHr ? 'text-rose-500' : 'text-teal-600'}`}>
+                            {log.hr > log.baselineHr ? '↑' : '↓'} {Math.abs(log.hr - log.baselineHr)}
+                          </span>
+                        )}
+                      </div>
                     </td>
                     <td className="px-5 py-4">
-                      <span className="text-sm font-bold text-slate-700">{log.hrv} <span className="text-xs text-slate-400 font-normal">ms</span></span>
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-sm font-bold text-slate-700">{log.hrv} <span className="text-xs text-slate-400 font-normal">ms</span></span>
+                        {!log.isCalibrating && log.baselineHrv && (
+                          <span className={`text-[10px] font-bold ${log.hrv > log.baselineHrv ? 'text-teal-600' : 'text-amber-500'}`}>
+                            {log.hrv > log.baselineHrv ? '↑' : '↓'} {Math.abs(log.hrv - log.baselineHrv)}
+                          </span>
+                        )}
+                      </div>
                     </td>
                     <td className="px-5 py-4">
                       <span className="text-sm text-slate-600 font-medium">{log.quality}%</span>
@@ -123,12 +137,14 @@ export const HistoryAndTrends: React.FC<HistoryAndTrendsProps> = ({ member }) =>
                       <Badge 
                         variant="outline" 
                         className={`font-bold text-[10px] uppercase shadow-xs pointer-events-none border-0 ${
-                          log.status === 'Waspada' 
+                          log.isCalibrating 
+                            ? 'bg-sky-100 text-sky-800' 
+                            : log.status === 'Perhatian' || log.status === 'Waspada'
                             ? 'bg-amber-100 text-amber-800' 
                             : 'bg-emerald-100 text-emerald-800'
                         }`}
                       >
-                        {log.status}
+                        {log.isCalibrating ? 'Mempelajari Pola' : log.status}
                       </Badge>
                     </td>
                     <td className="px-5 py-4 text-right">
@@ -158,11 +174,11 @@ export const HistoryAndTrends: React.FC<HistoryAndTrendsProps> = ({ member }) =>
         </div>
         
         {/* Pagination Controls */}
-        <div className="p-4 sm:p-5 border-t border-stone-100 flex flex-col sm:flex-row justify-between items-center gap-4 text-xs text-slate-500 bg-stone-50/50">
-          <div>
+        <div className="p-4 sm:p-5 border-t border-stone-100 flex flex-col md:flex-row justify-between items-center gap-4 text-xs text-slate-500 bg-stone-50/50">
+          <div className="text-center md:text-left w-full md:w-auto">
             Menampilkan 1-{filteredLogs.length} dari {filteredLogs.length} data
           </div>
-          <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-6">
+          <div className="flex flex-wrap justify-center items-center gap-4 sm:gap-6 w-full md:w-auto">
             <div className="flex items-center gap-2">
               <span>Tampilkan</span>
               <select className="border border-stone-200 rounded-lg px-2 py-1 text-slate-700 bg-white outline-hidden focus:border-teal-700 focus:ring-1 focus:ring-teal-700">
@@ -170,7 +186,7 @@ export const HistoryAndTrends: React.FC<HistoryAndTrendsProps> = ({ member }) =>
                 <option>10</option>
                 <option>20</option>
               </select>
-              <span>per halaman</span>
+              <span className="hidden sm:inline">per halaman</span>
             </div>
             <div className="flex items-center gap-1">
               <Button variant="outline" size="sm" className="h-7 w-7 p-0 rounded-md bg-white border-stone-200 text-stone-400" disabled>
@@ -179,7 +195,7 @@ export const HistoryAndTrends: React.FC<HistoryAndTrendsProps> = ({ member }) =>
               <Button variant="outline" size="sm" className="h-7 w-7 p-0 rounded-md bg-white border-stone-200 text-stone-400" disabled>
                 <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" /></svg>
               </Button>
-              <div className="px-3 text-slate-700 font-medium">Page 1 of 1</div>
+              <div className="px-2 sm:px-3 text-slate-700 font-medium">Page 1 of 1</div>
               <Button variant="outline" size="sm" className="h-7 w-7 p-0 rounded-md bg-white border-stone-200 text-stone-400" disabled>
                 <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" /></svg>
               </Button>
@@ -193,7 +209,7 @@ export const HistoryAndTrends: React.FC<HistoryAndTrendsProps> = ({ member }) =>
 
       {/* Detail Dialog */}
       <Dialog open={!!selectedLog} onOpenChange={(open: boolean) => !open && setSelectedLog(null)}>
-        <DialogContent className="max-w-2xl sm:max-w-2xl md:max-w-3xl bg-white rounded-3xl p-6 sm:p-8 space-y-6 border border-stone-200 shadow-xl overflow-hidden">
+        <DialogContent className="max-w-2xl sm:max-w-2xl md:max-w-3xl max-h-[90vh] overflow-y-auto bg-white rounded-3xl p-6 sm:p-8 space-y-6 border border-stone-200 shadow-xl">
           <DialogHeader className="pb-3 border-b border-stone-100 pr-8">
             <DialogTitle className="text-xl font-extrabold text-slate-900">Detail Pengukuran</DialogTitle>
             <DialogDescription className="text-sm text-slate-500">
@@ -202,6 +218,41 @@ export const HistoryAndTrends: React.FC<HistoryAndTrendsProps> = ({ member }) =>
           </DialogHeader>
 
           <div className="space-y-6">
+            
+            {/* Calibration Alert Box */}
+            {selectedLog?.isCalibrating && (
+              <div className="bg-sky-50 border border-sky-100 p-4 rounded-xl flex items-start gap-3">
+                <div className="text-sky-600 shrink-0">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </div>
+                <div>
+                  <h4 className="text-sm font-bold text-sky-900">Mempelajari Pola Detak Jantung</h4>
+                  <p className="text-sm text-sky-800 mt-0.5 leading-relaxed">
+                    Nadiku sedang mengenali pola detak jantung normal Anda. Fitur peringatan dini akan aktif otomatis setelah pengukuran rutin selama 14 hari.
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {/* Warning Alert Box */}
+            {!selectedLog?.isCalibrating && (selectedLog?.status === 'Perhatian' || selectedLog?.status === 'Waspada') && (
+              <div className="bg-amber-50 border border-amber-100 p-4 rounded-xl flex items-start gap-3">
+                <div className="text-amber-600 shrink-0">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                  </svg>
+                </div>
+                <div>
+                  <h4 className="text-sm font-bold text-amber-900">Perhatian: Pola Kurang Biasa</h4>
+                  <p className="text-sm text-amber-800 mt-0.5 leading-relaxed">
+                    {selectedLog.insight || 'Sistem mendeteksi fluktuasi yang perlu diperhatikan berdasarkan pola aktivitas Anda saat ini.'}
+                  </p>
+                </div>
+              </div>
+            )}
+
             {/* Video Player */}
             <div className="bg-stone-950 rounded-2xl overflow-hidden w-full h-[240px] sm:h-[320px] relative flex items-center justify-center shadow-inner">
               {selectedLog?.videoUrl ? (
@@ -226,30 +277,48 @@ export const HistoryAndTrends: React.FC<HistoryAndTrendsProps> = ({ member }) =>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
               <div className="p-4 rounded-2xl bg-stone-50 border border-stone-100 flex flex-col justify-between min-h-[96px]">
                 <span className="text-xs font-bold text-slate-500 leading-tight">Detak Jantung</span>
-                <div className="flex items-baseline gap-1 mt-2">
-                  <span className="text-2xl font-extrabold text-slate-900 leading-none">{selectedLog?.hr}</span>
-                  <span className="text-[10px] font-bold text-slate-400 uppercase">BPM</span>
+                <div>
+                  <div className="flex items-baseline gap-1 mt-2">
+                    <span className="text-2xl font-extrabold text-slate-900 leading-none">{selectedLog?.hr}</span>
+                    <span className="text-[10px] font-bold text-slate-400 uppercase">BPM</span>
+                  </div>
+                  {!selectedLog?.isCalibrating && selectedLog?.baselineHr && (
+                    <p className="text-[10px] font-semibold text-slate-400 mt-1">
+                      Normal: {selectedLog.baselineHr} BPM
+                    </p>
+                  )}
                 </div>
               </div>
               <div className="p-4 rounded-2xl bg-stone-50 border border-stone-100 flex flex-col justify-between min-h-[96px]">
                 <span className="text-xs font-bold text-slate-500 leading-tight">Variabilitas<br/>(HRV)</span>
-                <div className="flex items-baseline gap-1 mt-2">
-                  <span className="text-2xl font-extrabold text-slate-900 leading-none">{selectedLog?.hrv}</span>
-                  <span className="text-[10px] font-bold text-slate-400 uppercase">ms</span>
+                <div>
+                  <div className="flex items-baseline gap-1 mt-2">
+                    <span className="text-2xl font-extrabold text-slate-900 leading-none">{selectedLog?.hrv}</span>
+                    <span className="text-[10px] font-bold text-slate-400 uppercase">ms</span>
+                  </div>
+                  {!selectedLog?.isCalibrating && selectedLog?.baselineHrv && (
+                    <p className="text-[10px] font-semibold text-slate-400 mt-1">
+                      Normal: {selectedLog.baselineHrv} ms
+                    </p>
+                  )}
                 </div>
               </div>
               <div className="p-4 rounded-2xl bg-stone-50 border border-stone-100 flex flex-col justify-between min-h-[96px]">
                 <span className="text-xs font-bold text-slate-500 leading-tight">Respirasi</span>
-                <div className="flex items-baseline gap-1 mt-2">
-                  <span className="text-2xl font-extrabold text-slate-900 leading-none">{selectedLog?.rr}</span>
-                  <span className="text-[10px] font-bold text-slate-400 uppercase">bpm</span>
+                <div>
+                  <div className="flex items-baseline gap-1 mt-2">
+                    <span className="text-2xl font-extrabold text-slate-900 leading-none">{selectedLog?.rr}</span>
+                    <span className="text-[10px] font-bold text-slate-400 uppercase">bpm</span>
+                  </div>
                 </div>
               </div>
               <div className="p-4 rounded-2xl bg-stone-50 border border-stone-100 flex flex-col justify-between min-h-[96px]">
                 <span className="text-xs font-bold text-slate-500 leading-tight">Kualitas<br/>Sinyal</span>
-                <div className="flex items-baseline gap-1 mt-2">
-                  <span className="text-2xl font-extrabold text-slate-900 leading-none">{selectedLog?.quality}</span>
-                  <span className="text-[10px] font-bold text-slate-400 uppercase">%</span>
+                <div>
+                  <div className="flex items-baseline gap-1 mt-2">
+                    <span className="text-2xl font-extrabold text-slate-900 leading-none">{selectedLog?.quality}</span>
+                    <span className="text-[10px] font-bold text-slate-400 uppercase">%</span>
+                  </div>
                 </div>
               </div>
             </div>
