@@ -30,9 +30,7 @@ import {
   Activity,
   Wind,
   Video,
-  ChevronDown,
   ArrowUpRight,
-  Check,
   Plus,
   LogOut,
   Sparkles,
@@ -163,8 +161,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
     from.setDate(to.getDate() - 6)
     return { from, to }
   })
-  const [isTimeDropdownOpen, setIsTimeDropdownOpen] = useState(false)
-  const [showActivityOverlay, setShowActivityOverlay] = useState(true)
+  const showActivityOverlay = true
   const [showHrvComparison, setShowHrvComparison] = useState(true)
   const [isLogModalOpen, setIsLogModalOpen] = useState(false)
   const [selectedLogCategory, setSelectedLogCategory] = useState<ActivityCategory | null>(null)

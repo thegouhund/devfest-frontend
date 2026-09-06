@@ -102,11 +102,19 @@ const QUALITY_LABELS: Record<string, string> = {
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
 
+interface RecordingState {
+  blob: Blob
+  mimeType: string
+  fileName?: string
+  isUpload?: boolean
+}
+
 export const RppgMeasure: React.FC = () => {
   const { addAiMessage } = useChat()
   const videoRef = useRef<HTMLVideoElement>(null)
   const streamRef = useRef<MediaStream | null>(null)
   const recorderRef = useRef<MediaRecorder | null>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
   const chunksRef = useRef<Blob[]>([])
   const timerRef = useRef<number>(0)
   const cancelledRef = useRef(false)
@@ -116,10 +124,23 @@ export const RppgMeasure: React.FC = () => {
   const [phase, setPhase] = useState<Phase>('idle')
   const [elapsed, setElapsed] = useState(0)
   const [message, setMessage] = useState<string | null>(null)
-  const [recording, setRecording] = useState<{ blob: Blob; mimeType: string } | null>(null)
+  const [recording, setRecording] = useState<RecordingState | null>(null)
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null)
   const [result, setResult] = useState<MeasurementResult | null>(null)
   /** Popup hasil bisa ditutup tanpa membuang rekaman/hasilnya. */
   const [showResult, setShowResult] = useState(false)
+
+  useEffect(() => {
+    if (!recording?.blob) {
+      setPreviewUrl(null)
+      return
+    }
+    const url = URL.createObjectURL(recording.blob)
+    setPreviewUrl(url)
+    return () => {
+      URL.revokeObjectURL(url)
+    }
+  }, [recording?.blob])
 
   useEffect(() => {
     let cancelled = false
@@ -185,7 +206,11 @@ export const RppgMeasure: React.FC = () => {
     }
     recorder.onstop = () => {
       window.clearInterval(timerRef.current)
-      setRecording({ blob: new Blob(chunksRef.current, { type: mimeType }), mimeType })
+      setRecording({
+        blob: new Blob(chunksRef.current, { type: mimeType }),
+        mimeType,
+        isUpload: false,
+      })
       setPhase('recorded')
       setShowResult(true)
     }
@@ -197,6 +222,37 @@ export const RppgMeasure: React.FC = () => {
       setElapsed(seconds)
       if (seconds >= DURATION) stopRecording()
     }, 200)
+  }
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    // Validasi format video
+    if (!file.type.startsWith('video/') && !file.name.match(/\.(mp4|mov|webm|avi|mkv)$/i)) {
+      setMessage('Format file harus berupa video (MP4, MOV, atau WebM).')
+      setPhase('failed')
+      setShowResult(true)
+      e.target.value = ''
+      return
+    }
+
+    if (recorderRef.current?.state === 'recording') {
+      stopRecording()
+    }
+
+    const mimeType = file.type || 'video/mp4'
+    setRecording({
+      blob: file,
+      mimeType,
+      fileName: file.name,
+      isUpload: true,
+    })
+    setResult(null)
+    setMessage(null)
+    setPhase('recorded')
+    setShowResult(true)
+    e.target.value = ''
   }
 
   /** Cek status tiap 2 detik sampai selesai, gagal, atau lewat 60 detik. */
@@ -242,10 +298,9 @@ export const RppgMeasure: React.FC = () => {
     setPhase('uploading')
     setMessage(null)
     try {
-      const { session_id } = await uploadMeasurement(
-        recording.blob,
-        `rppg-${Date.now()}.${extensionFor(recording.mimeType)}`
-      )
+      const filename =
+        recording.fileName || `rppg-${Date.now()}.${extensionFor(recording.mimeType)}`
+      const { session_id } = await uploadMeasurement(recording.blob, filename)
       setPhase('processing')
       await pollUntilReady(session_id)
     } catch (error) {
@@ -263,8 +318,8 @@ export const RppgMeasure: React.FC = () => {
   const remaining = Math.max(0, Math.ceil(DURATION - elapsed))
 
   const dialogTitle = () => {
-    if (phase === 'recorded') return 'Rekaman Siap'
-    if (phase === 'uploading') return 'Mengunggah Rekaman'
+    if (phase === 'recorded') return recording?.isUpload ? 'Video Siap Dianalisis' : 'Rekaman Siap'
+    if (phase === 'uploading') return recording?.isUpload ? 'Mengunggah Video' : 'Mengunggah Rekaman'
     if (phase === 'processing') return 'Menganalisis Sinyal'
     if (phase === 'failed') return 'Pengukuran Gagal'
     return rejected ? 'Sinyal Ditolak' : 'Hasil Scan'
@@ -272,15 +327,23 @@ export const RppgMeasure: React.FC = () => {
 
   return (
     <div className="flex flex-col flex-1 min-h-0 gap-3">
-      {/* KAMERA PENUH — tombol rekam mengambang di atasnya */}
+      {/* KAMERA PENUH — tombol rekam mengambang di atasnya & tombol upload di kiri bawah */}
       <div className="relative w-full flex-1 min-h-90 rounded-3xl overflow-hidden bg-ink-950 border border-ink-800">
         {cameraError ? (
-          <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 text-center px-6">
+          <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 text-center px-6">
             <CameraOff className="w-8 h-8 text-ink-500" />
             <span className="text-sm font-bold text-ink-200">Kamera tidak dapat diakses</span>
             <p className="text-xs text-ink-400 max-w-xs">
               Izinkan akses kamera di browser lalu muat ulang halaman. ({cameraError})
             </p>
+            <Button
+              size="sm"
+              onClick={() => fileInputRef.current?.click()}
+              className="mt-2 text-xs font-bold bg-white text-ink-900 hover:bg-ink-100 rounded-full px-4 cursor-pointer"
+            >
+              <UploadCloud className="w-3.5 h-3.5 mr-1.5 text-ink-900" />
+              Unggah File Video Saja
+            </Button>
           </div>
         ) : (
           // Video dibungkus kotak shrink-to-fit: bingkai oval jadi berada di
@@ -308,9 +371,18 @@ export const RppgMeasure: React.FC = () => {
           </div>
         )}
 
+        {/* Input file tersembunyi untuk upload video */}
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="video/mp4,video/quicktime,video/webm,video/*"
+          onChange={handleFileSelect}
+          className="hidden"
+          id="rppg-video-upload-input"
+        />
+
         {/* Status kamera */}
         <div className="absolute top-4 left-4 right-4 flex items-start justify-between gap-2">
-
           {isRecording && (
             <span className="flex items-center gap-1.5 bg-black/60 backdrop-blur-xs px-3 py-1.5 rounded-full text-xs text-white font-mono font-bold">
               <span className="w-2 h-2 rounded-full bg-rose-500 animate-pulse" />
@@ -336,6 +408,23 @@ export const RppgMeasure: React.FC = () => {
               className="h-full bg-rose-500 transition-all duration-200"
               style={{ width: `${Math.min(100, (elapsed / DURATION) * 100)}%` }}
             />
+          </div>
+        )}
+
+        {/* Tombol Upload Video di Kiri Bawah */}
+        {!isRecording && (
+          <div className="absolute bottom-6 left-4 sm:left-6 z-20">
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={isBusy}
+              aria-label="Unggah file video"
+              className="flex items-center gap-2 px-3.5 py-2.5 rounded-2xl bg-black/60 hover:bg-black/80 backdrop-blur-md border border-white/20 text-white text-xs font-semibold shadow-lg transition cursor-pointer active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed"
+              title="Unggah video dari perangkat"
+            >
+              <UploadCloud className="w-4 h-4 text-clay-300 shrink-0" />
+              <span className="inline">Unggah Video</span>
+            </button>
           </div>
         )}
 
@@ -377,7 +466,9 @@ export const RppgMeasure: React.FC = () => {
             </DialogTitle>
             <DialogDescription className="text-xs text-ink-500">
               {phase === 'recorded'
-                ? `Rekaman ${DURATION} detik siap dikirim untuk dianalisis.`
+                ? recording?.isUpload
+                  ? `File video "${recording.fileName ?? 'video'}" siap dianalisis.`
+                  : `Rekaman ${DURATION} detik siap dikirim untuk dianalisis.`
                 : isBusy
                 ? 'Mohon tunggu, jangan tutup halaman ini.'
                 : 'Hasil analisis sinyal mikrovaskular wajah.'}
@@ -388,6 +479,30 @@ export const RppgMeasure: React.FC = () => {
             <div className="flex items-start gap-2 p-3 rounded-xl bg-amber-50 border border-amber-200 text-xs text-amber-800 font-medium">
               <AlertTriangle className="w-3.5 h-3.5 shrink-0 mt-0.5" />
               <span>{message}</span>
+            </div>
+          )}
+
+          {/* Pratinjau Video saat file / rekaman siap */}
+          {phase === 'recorded' && previewUrl && (
+            <div className="space-y-2.5">
+              <div className="relative rounded-2xl overflow-hidden bg-ink-950 border border-ink-200 aspect-video max-h-52 flex items-center justify-center">
+                <video
+                  src={previewUrl}
+                  controls
+                  playsInline
+                  className="w-full h-full object-contain"
+                />
+              </div>
+              {recording?.fileName && (
+                <div className="flex items-center justify-between px-3 py-2 rounded-xl bg-ink-50 border border-ink-100 text-xs text-ink-600">
+                  <span className="font-medium truncate max-w-[220px]">
+                    {recording.fileName}
+                  </span>
+                  <span className="text-[11px] text-ink-400 shrink-0 font-mono">
+                    {(recording.blob.size / (1024 * 1024)).toFixed(1)} MB
+                  </span>
+                </div>
+              )}
             </div>
           )}
 
@@ -457,12 +572,25 @@ export const RppgMeasure: React.FC = () => {
                   variant="ghost"
                   onClick={() => {
                     setShowResult(false)
-                    startRecording()
+                    if (recording?.isUpload) {
+                      fileInputRef.current?.click()
+                    } else {
+                      startRecording()
+                    }
                   }}
                   className="px-4 py-2 rounded-full text-xs font-semibold text-ink-600 hover:bg-ink-100 cursor-pointer"
                 >
-                  <RotateCcw className="w-3.5 h-3.5" />
-                  Rekam Ulang
+                  {recording?.isUpload ? (
+                    <>
+                      <UploadCloud className="w-3.5 h-3.5" />
+                      Ganti Video
+                    </>
+                  ) : (
+                    <>
+                      <RotateCcw className="w-3.5 h-3.5" />
+                      Rekam Ulang
+                    </>
+                  )}
                 </Button>
                 <Button
                   size="sm"
@@ -485,18 +613,32 @@ export const RppgMeasure: React.FC = () => {
                 >
                   Tutup
                 </Button>
-                <Button
-                  size="sm"
-                  onClick={() => {
-                    setShowResult(false)
-                    startRecording()
-                  }}
-                  disabled={!ready}
-                  className="px-6 py-2 rounded-full text-xs font-bold bg-ink-900 hover:bg-ink-800 text-white shadow-xs cursor-pointer"
-                >
-                  <RotateCcw className="w-3.5 h-3.5 text-clay-300" />
-                  Ukur Lagi
-                </Button>
+                {recording?.isUpload ? (
+                  <Button
+                    size="sm"
+                    onClick={() => {
+                      setShowResult(false)
+                      fileInputRef.current?.click()
+                    }}
+                    className="px-6 py-2 rounded-full text-xs font-bold bg-ink-900 hover:bg-ink-800 text-white shadow-xs cursor-pointer"
+                  >
+                    <UploadCloud className="w-3.5 h-3.5 text-clay-300" />
+                    Unggah Video Lain
+                  </Button>
+                ) : (
+                  <Button
+                    size="sm"
+                    onClick={() => {
+                      setShowResult(false)
+                      startRecording()
+                    }}
+                    disabled={!ready}
+                    className="px-6 py-2 rounded-full text-xs font-bold bg-ink-900 hover:bg-ink-800 text-white shadow-xs cursor-pointer"
+                  >
+                    <RotateCcw className="w-3.5 h-3.5 text-clay-300" />
+                    Ukur Lagi
+                  </Button>
+                )}
               </>
             )}
           </DialogFooter>
