@@ -1,0 +1,26 @@
+services:
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        VITE_API_BASE_URL: https://devfest-backend.gouhund.my.id
+    restart: unless-stopped
+    container_name: devfest-web
+    networks:
+      - web_proxy
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.devfest.rule=Host(`devfest.gouhund.my.id`)"
+      - "traefik.http.routers.devfest.entrypoints=websecure"
+      - "traefik.http.routers.devfest.tls=true"
+      - "traefik.http.routers.devfest.tls.certresolver=letsencrypt"
+      - "traefik.http.services.devfest.loadbalancer.server.port=80"
+      - "traefik.http.routers.devfest-http.rule=Host(`devfest.gouhund.my.id`)"
+      - "traefik.http.routers.devfest-http.entrypoints=web"
+      - "traefik.http.routers.devfest-http.middlewares=redirect-to-https"
+      - "traefik.http.middlewares.redirect-to-https.redirectscheme.scheme=https"
+
+networks:
+  web_proxy:
+    external: true
