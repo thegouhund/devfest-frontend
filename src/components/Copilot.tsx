@@ -197,10 +197,6 @@ export const Copilot: React.FC = () => {
                 </Button>
               </div>
             </form>
-
-            <p className="text-center text-[11px] text-ink-400">
-              Copilot menjawab dari data rPPG Anda. Hasilnya bersifat informasional, bukan diagnosis medis.
-            </p>
           </div>
         </div>
 
